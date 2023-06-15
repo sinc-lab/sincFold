@@ -35,4 +35,4 @@ dependencies = [
 "Bug Tracker" = "https://github.com/sinc-lab/sincfold/issues"
 
 [project.scripts]
-sincfold = "sincfold:main"
+sincFold = "sincfold:main"

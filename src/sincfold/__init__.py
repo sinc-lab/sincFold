@@ -119,7 +119,6 @@ def main():
         if out_path[-1] != "/":
             out_path += "/"
         os.makedirs(out_path)
-        json.dump(config, open(f"{out_path}config.json", "w"))
 
         if args.valid_file is not None:
             train_file = args.train_file
@@ -160,7 +159,6 @@ def main():
 
             if val_metrics["f1"] > best_f1:
                 best_f1 = val_metrics["f1"]
-                best_epoch = epoch
                 tr.save(net.state_dict(), f"{out_path}weights.pmt")
                 patience_counter = 0
             else:
@@ -222,13 +220,13 @@ def main():
         print(f"Start prediction of {pred_file}")
         predictions = net.pred(pred_loader)
         
-        fname, ext = os.path.splitext(out_file)
+        _, ext = os.path.splitext(out_file)
         if ext == ".fasta":
             with open(out_file, "w") as f:
                 for i in range(len(predictions)):
                     item = predictions.iloc[i]
                     structure = bp2dot(len(item.sequence), item.base_pairs)
-                    f.write(f">{item.id}\n{item.base_pairs}\n{structure}\n")
+                    f.write(f">{item.id}\n{structure}\n")
         else:
             predictions.to_csv(out_file, index=False)
                 
