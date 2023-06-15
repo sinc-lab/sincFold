@@ -300,7 +300,6 @@ def validate_file(pred_file):
                         if not valid_sequence(row[-1]):
                             raise ValueError(f"Sequence {row.upper()} contains invalid characters")
                     else: # struct
-                        print(line, row)
                         row.append(line.strip()[:len(row[1])]) # some fasta formats have extra information in the structure line
         if row:
             table.append(row)

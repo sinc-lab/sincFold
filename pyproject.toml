@@ -1,6 +1,38 @@
 [build-system]
-requires = [
-    "setuptools>=42",
-    "wheel"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sincfold"
+version = "0.1"
+authors = [
+  {name="Leandro Bugnon", email="lbugnon@sinc.unl.edu.ar"},
+  {name="Leandro Di Persia"},
+  {name="Matías Gerard"},
+  {name="Jonathan Raad"},
+  {name="Leandro Bugnon"},  
+  {name="Georgina Stegmayer"},
+  {name="Diego Milone"},
 ]
-build-backend = "setuptools.build_meta"
+description = "An end-to-end method to predict RNA secondary structure based on deep learning"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+  "torch",
+  "pandas",
+  "numpy",
+  "scikit-learn",
+  "tqdm",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/sinc-lab/sincfold"
+"Bug Tracker" = "https://github.com/sinc-lab/sincfold/issues"
+
+[project.scripts]
+sincfold = "sincfold:main"
