@@ -91,4 +91,4 @@ then call the training and testing functions
 
     sincFold test working_path/test.csv -m working_path/output/weights.pmt
 
-The complete process may take about 4hs using a RTX A5000.
+The complete process may take about 3hs using a RTX A5000.
