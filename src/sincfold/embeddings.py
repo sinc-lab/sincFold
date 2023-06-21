@@ -1,6 +1,7 @@
 import torch as tr
 
 # Mapping of nucleotide symbols
+# R	Guanine / Adenine (purine)
 # Y	Cytosine / Uracil (pyrimidine)
 # K	Guanine / Uracil
 # M	Adenine / Cytosine
@@ -12,6 +13,7 @@ import torch as tr
 # V	Guanine / Cytosine / Adenine
 # N	Adenine / Guanine / Cytosine / Uracil
 NT_DICT = {
+    "R": ["G", "A"],
     "Y": ["C", "U"],
     "K": ["G", "U"],
     "M": ["A", "C"],
