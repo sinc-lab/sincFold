@@ -4,12 +4,12 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sincfold"
-version = "0.1"
+version = "0.2"
 authors = [
   {name="Leandro Bugnon", email="lbugnon@sinc.unl.edu.ar"}]
 description = "An end-to-end method to predict RNA secondary structure based on deep learning"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
