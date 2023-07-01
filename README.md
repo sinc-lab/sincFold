@@ -1,18 +1,17 @@
-# sincFold
+# **sincFold**: a RNA folding prediction tool based on deep learning.
 
-This is the repository for sincFold, a new RNA folding prediction tool based on deep learning.
+<p align="center">
+<img src="abstract.png" alt="abstract">
+</p>
 
 ```bibtex
 @article{sincFold2023,
-  title={sincFold: a fast end-to-end method to accurately fold RNA sequences with deep learning},
-  author={Leandro A. Bugnon and Leandro Di Persia and Matias Gerard and Jonathan Raad and Santiago Prochetto and Emilio Fenoy and  Georgina Stegmayer and Diego H. Milone},
+  title={sincFold: an end-to-end method to accurately fold RNA sequences with compressed short-long context encodings and binding restrictions},
+  author={Leandro A. Bugnon and Leandro Di Persia and Matias Gerard and Jonathan Raad and Santiago Prochetto and Emilio Fenoy and Uciel Chorostecki and Georgina Stegmayer and Diego H. Milone},
   journal={under review},
   year={2023}
 }
 ```
-<p align="center">
-<img src="abstract.png" alt="abstract">
-</p>
 
 sincFold is a fast and accurate RNA secondary structure prediction method. It is an end-to-end approach that predict the nucleotides contact matrix using only the RNA sequence as input. The model is based on a residual neural network that can learn short and long context features from a small dataset, it can incorporate base-pair constraints and can guarantee the output structure to be valid.  Extensive experiments on several benchmark datasets were made, comparing sincFold against classical methods and new models based on deep learning. We demonstrate that sincFold achieves a very competitive performance in comparison with state-of-the-art methods.
 
@@ -21,7 +20,7 @@ A summary of results can be seen in [this notebook](results/summary.ipynb).
 ## Folding RNA sequences
 
 We have a [webserver](https://sinc.unl.edu.ar/web-demo/sincfold/) running with the lattest version. This server admits one sequence at a time. Please follow the next
-instructions if you want to run the model locally. We provide a model pretrained with validated  RNA datasets (archiveII, RNAstralign, urs-pdb). At the end you can find the instructions to replicate our results from scratch.
+instructions if you want to run the model locally. We provide a model pretrained with validated  RNA datasets (archiveII, RNAstralign, urs-pdb). At the end you can find the instructions to replicate our cross-validation results from scratch.
 
 ## Install
 
