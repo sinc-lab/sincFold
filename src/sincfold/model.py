@@ -230,7 +230,7 @@ class SincFold(nn.Module):
                 y.cpu(), y_pred.detach().cpu(), batch[2], method="triangular"
             )
 
-            metrics["loss"] += loss
+            metrics["loss"] += loss.item()
             metrics["f1"] += f1
 
             loss.backward()
@@ -257,7 +257,7 @@ class SincFold(nn.Module):
 
                 y_pred = self(X, *batch[2:])
                 loss = self.loss_func(y_pred, y)
-                metrics["loss"] += loss
+                metrics["loss"] += loss.item()
 
                 if isinstance(y_pred, tuple):
                     y_pred = y_pred[0]
