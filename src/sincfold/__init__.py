@@ -51,7 +51,11 @@ def main():
             out_path = args.out_path
         if out_path[-1] != "/":
             out_path += "/"
-        os.makedirs(out_path)
+        print("working on", out_path)
+        if not os.path.isdir(out_path):
+            os.makedirs(out_path)
+        else:
+            raise ValueError(f"Output path {out_path} already exists")
 
         if args.valid_file is not None:
             train_file = args.train_file
