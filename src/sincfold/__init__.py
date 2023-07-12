@@ -16,9 +16,16 @@ from sincfold.parser import parser
 def main():
     
     args = parser()
+    
+    if args.cache and args.command == "train":
+        cache_path = "cache/"
+        if not os.path.isdir(cache_path):
+            os.makedirs(cache_path)
+    else:
+        cache_path = None
 
-    config= {"device": args.d, "batch_size": args.batch,  
-             "valid_split": 0.1, "max_len": 512, "verbose": not args.quiet}
+    config= {"device": args.d, "batch_size": args.batch,  "use_restrictions": args.use_restrictions, 
+             "valid_split": 0.1, "max_len": 512, "verbose": not args.quiet, "cache_path": cache_path}
     if "max_epochs" in args:
         config["max_epochs"] = args.max_epochs
 
@@ -36,13 +43,6 @@ def main():
         if file is not None:
             file.write(msg + "\n")
             file.flush()
-
-    if args.cache and args.command == "train":
-        cache_path = "cache/"
-        if not os.path.isdir(cache_path):
-            os.makedirs(cache_path)
-    else:
-        cache_path = None
 
     if args.command == "train":
         if args.out_path is None:
@@ -71,14 +71,14 @@ def main():
             data.drop(val_data.index).to_csv(train_file, index=False)
             
         train_loader = DataLoader(
-            SeqDataset(train_file, max_len=config["max_len"], cache=cache_path),
+            SeqDataset(train_file, **config),
             batch_size=config["batch_size"],
             shuffle=True,
             num_workers=args.j,
             collate_fn=pad_batch,
         )
         valid_loader = DataLoader(
-            SeqDataset(valid_file, max_len=config["max_len"], cache=cache_path),
+            SeqDataset(valid_file, **config),
             batch_size=config["batch_size"],
             shuffle=False,
             num_workers=args.j,
@@ -109,7 +109,7 @@ def main():
                 + " ".join([f"val_{k} {v:.3f}" for k, v in val_metrics.items()])
             )
             log(msg, open(f"{out_path}train.txt", "a"))
-        shutil.rmtree(cache_path, ignore_errors=True)
+        shutil.rmtree(config["cache_path"], ignore_errors=True)
 
 
     if args.command == "test":
@@ -118,7 +118,7 @@ def main():
         test_file = validate_file(test_file)
 
         test_loader = DataLoader(
-            SeqDataset(test_file, max_len=config["max_len"], cache=cache_path),
+            SeqDataset(test_file, **config),
             batch_size=config["batch_size"],
             shuffle=False,
             num_workers=args.j,
@@ -146,7 +146,7 @@ def main():
         pred_file = validate_file(pred_file)
        
         pred_loader = DataLoader(
-            SeqDataset(pred_file, max_len=config["max_len"],for_prediction=True),
+            SeqDataset(pred_file, max_len=config["max_len"], for_prediction=True, use_restrictions=args.use_restrictions),
             batch_size=config["batch_size"],
             shuffle=False,
             num_workers=args.j,

@@ -10,8 +10,8 @@ from sincfold.utils import valid_mask, prob_mat, bp2matrix, dot2bp
 
 class SeqDataset(Dataset):
     def __init__(
-        self, dataset_path, min_len=0, max_len=512, verbose=False, cache=None, for_prediction=False, **kargs
-    ):
+        self, dataset_path, min_len=0, max_len=512, verbose=False, cache=None, for_prediction=False, 
+        use_restrictions=False, **kargs):
         self.max_len = max_len
         self.verbose = verbose
         if cache is not None and not os.path.isdir(cache):
@@ -57,6 +57,7 @@ class SeqDataset(Dataset):
 
         self.embedding = OneHotEmbedding()
         self.embedding_size = self.embedding.emb_size
+        self.use_restrictions = use_restrictions
 
         self.base_pairs = None
         if "base_pairs" in data.columns:
@@ -71,7 +72,7 @@ class SeqDataset(Dataset):
         seqid = self.ids[idx]
         cache = f"{self.cache}/{seqid}.pk"
         if (self.cache is not None) and os.path.isfile(cache):
-            seq_emb, Mc, L, mask, prob_mask, seqid, sequence = pickle.load(open(cache, "rb"))
+            item = pickle.load(open(cache, "rb"))
         else:
             sequence = self.sequences[idx]
             L = len(sequence)
@@ -82,30 +83,46 @@ class SeqDataset(Dataset):
             seq_emb = self.embedding.seq2emb(sequence)
 
             mask = valid_mask(sequence)
-            prob_mask = prob_mat(sequence)
+            if self.use_restrictions:
+                prob_mask = prob_mat(sequence)
+                item = [seq_emb, Mc, L, mask, seqid, sequence, prob_mask]
+            else:
+                item = [seq_emb, Mc, L, mask, seqid, sequence]
+                
 
             if self.cache is not None:
-                pickle.dump([seq_emb, Mc, L, mask, prob_mask, seqid, sequence], open(cache, "wb"))
-
-        return seq_emb, Mc, L, mask, prob_mask, seqid, sequence
+                pickle.dump(item, open(cache, "wb"))
+                
+        return item
 
 
 def pad_batch(batch):
     """batch is a list of (seq_emb, Mc, L, mask, prob_mask, seqid)"""
-    seq_emb, Mc, L, mask, prob_mask, seqid, sequence = zip(*batch)
+    if len(batch[0]) == 7:
+        seq_emb, Mc, L, mask, seqid, sequence, prob_mask = zip(*batch)
+    else:
+        prob_mask = None
+        seq_emb, Mc, L, mask, seqid, sequence = zip(*batch)
+
     seq_emb_pad = tr.zeros((len(batch), seq_emb[0].shape[0], max(L)))
     if Mc[0] is None:
         Mc_pad = None
     else:
         Mc_pad = -tr.ones((len(batch), max(L), max(L)), dtype=tr.long)
-    mask_pad, prob_mask_pad = tr.zeros((len(batch), max(L), max(L))), tr.zeros(
-        (len(batch), max(L), max(L))
-    )
+    mask_pad = tr.zeros((len(batch), max(L), max(L)))
+    if prob_mask is not None:
+        prob_mask_pad = tr.zeros((len(batch), max(L), max(L)))
+
     for k in range(len(batch)):
         seq_emb_pad[k, :, : L[k]] = seq_emb[k]
         if Mc_pad is not None:
             Mc_pad[k, : L[k], : L[k]] = Mc[k]
         mask_pad[k, : L[k], : L[k]] = mask[k]
-        prob_mask_pad[k, : L[k], : L[k]] = prob_mask[k]
+        if prob_mask is not None:
+            prob_mask_pad[k, : L[k], : L[k]] = prob_mask[k]
 
-    return seq_emb_pad, Mc_pad, L, mask_pad, prob_mask_pad, seqid, sequence
+    if prob_mask is not None:
+        return seq_emb_pad, Mc_pad, L, mask_pad, seqid, sequence, prob_mask_pad
+    else:
+        return seq_emb_pad, Mc_pad, L, mask_pad, seqid, sequence
+    

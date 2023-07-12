@@ -39,6 +39,8 @@ and install with:
 
     pip install .
 
+If you find issues with pytorch instalation, please refer to [the documentation](https://pytorch.org/). 
+
 ## Predicting sequences
 
 To predict the secondary structure of a list of sequences, using the pretrained weights, use 
@@ -59,13 +61,13 @@ The option -n limits the maximum number of epochs to get a quick result.
 
 Then, a different test set can be evaluated with 
 
-    sincFold test sample/test.csv -m output_path/weights.pmt
+    sincFold test sample/test.csv -w output_path/weights.pmt
 
-The model path (-m) is optional, if ommited the pretrained weights are used.
+The model path (-w) is optional, if ommited the pretrained weights are used.
 
 ## Reproducing our results
 
-You can run the complete train and test scheme using the following code (in this case set up benchmarkII and fold 0 data partition)
+You can run the complete train and test scheme using the following code (in this case set up benchmarkII and fold 0 data partition). 
 
 ```python
 import os 
@@ -86,8 +88,8 @@ dataset.loc[partitions[(partitions.fold_number==0) & (partitions.partition=="tes
 then call the training and testing functions
 
 
-    sincFold train working_path/train.csv --valid_file working_path/valid.csv -o working_path/output/
+    sincFold -d cuda train working_path/train.csv --valid_file working_path/valid.csv -o working_path/output/
 
-    sincFold test working_path/test.csv -m working_path/output/weights.pmt
+    sincFold -d cuda test working_path/test.csv -w working_path/output/weights.pmt
 
-The complete process may take about 3hs using a RTX A5000.
+Using a GPU for training is recommended (with the option '-d cuda'). The complete process may take about 3hs using a RTX A5000.

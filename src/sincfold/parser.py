@@ -8,10 +8,11 @@ def parser():
         epilog="webserver link | https://github.com/sinc-lab/sincFold",
     )
     parser.add_argument("-c", "--config", type=str, help="Config file (optional, overrides any other options)")
-    parser.add_argument("-d", type=str, default="cuda", help="Device (cpu or cuda)")
+    parser.add_argument("-d", type=str, default="cpu", help="Device ('cpu' or 'cuda')")
     parser.add_argument("-batch", type=int, default=4, help="Batch size for handling sequences")
+    parser.add_argument("--use-restrictions", action="store_true", help="Use external restriction matrix (default: False)")
     parser.add_argument("-j", type=int, default=4, help="Number of parallel workers")
-    parser.add_argument("--quiet", action="store_true", help="Quiet mode") 
+    parser.add_argument("--quiet", action="store_true", help="Quiet mode (default: False)") 
     
 
     subparsers = parser.add_subparsers(
@@ -59,7 +60,7 @@ def parser():
         help="Testing dataset (csv file with 'id', 'sequence', and 'dotbracket' or 'base_pairs' columns)",
     )
     parser_test.add_argument(
-        "-m", type=str, dest="model_weights", help="Trained model weights"
+        "-w", type=str, dest="model_weights", help="Trained model weights"
     )
     parser_test.add_argument(
         "-o",
@@ -82,7 +83,7 @@ def parser():
         help="Output predictions (default: pred.csv)",
     )
     parser_pred.add_argument(
-        "-m", type=str, dest="model_weights", help="Trained model weights"
+        "-w", type=str, dest="model_weights", help="Trained model weights"
     )
 
     return parser.parse_args()

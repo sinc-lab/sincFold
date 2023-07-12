@@ -53,8 +53,12 @@ class SincFold(nn.Module):
         self.verbose = verbose
         self.config = kwargs
 
+        mid_ch = 1
+        if self.config["use_restrictions"]:
+            mid_ch = 2
+
         # Define architecture
-        self.build_graph(embedding_dim, **kwargs)
+        self.build_graph(embedding_dim, mid_ch=mid_ch, **kwargs)
 
         self.optimizer = tr.optim.Adam(self.parameters(), lr=lr)
 
@@ -76,6 +80,7 @@ class SincFold(nn.Module):
         num_layers=1,
         dilation_resnet1d=3,
         resnet_bottleneck_factor=0.5,
+        mid_ch=1,
         kernel_resnet2d=5,
         bottleneck1_resnet2d=128,
         bottleneck2_resnet2d=64,
@@ -85,6 +90,8 @@ class SincFold(nn.Module):
         **kwargs
     ):
         pad = (kernel - 1) // 2
+
+        self.use_restrictions = mid_ch != 1
 
         self.resnet = [nn.Conv1d(embedding_dim, filters, kernel, padding="same")]
 
@@ -116,7 +123,7 @@ class SincFold(nn.Module):
         )
 
         self.conv2D1 = nn.Conv2d(
-            in_channels=2, out_channels=filters_resnet2d, kernel_size=7, padding="same"
+            in_channels=mid_ch, out_channels=filters_resnet2d, kernel_size=7, padding="same"
         )
         self.resnet_block = [
             ResidualBlock2D(
@@ -142,10 +149,9 @@ class SincFold(nn.Module):
         )
 
     def forward(self, x, *args):
-        """args includes additional variables from dataloader (L, mask, prob_mask, seqid, ...)"""
+        """args includes additional variables from dataloader: L, mask, seqid, sequence, [prob_mask]"""
         n = x.shape[2]
         mask = args[1].to(self.device)
-        prob_mat = args[2].to(self.device)
         y = self.resnet(x)
         ya = self.convsal1(y)
         ya = tr.transpose(ya, -1, -2)
@@ -154,15 +160,19 @@ class SincFold(nn.Module):
 
         y = ya @ yb
         yt = tr.transpose(y, -1, -2)
-
         y = (y + yt) / 2
 
         y0 = y.view(-1, n, n).multiply(mask)  # add valid connection mask
 
         batch_size = x.shape[0]
-        x1 = tr.zeros([batch_size, 2, n, n]).to(self.device)
-        x1[:, 0, :, :] = y0
-        x1[:, 1, :, :] = prob_mat
+
+        if self.use_restrictions:
+            prob_mat = args[4].to(self.device)
+            x1 = tr.zeros([batch_size, 2, n, n]).to(self.device)
+            x1[:, 0, :, :] = y0
+            x1[:, 1, :, :] = prob_mat
+        else:
+            x1 = y0.unsqueeze(1)
 
         # Representation
         y = self.conv2D1(x1)
@@ -213,7 +223,7 @@ class SincFold(nn.Module):
         if self.verbose:
             loader = tqdm(loader)
 
-        for batch in loader:  # X, y, l, mask, ...
+        for batch in loader:  # X, Y, L, mask, seqid, sequence, [prob_mask]
             X = batch[0].to(self.device)
             y = batch[1].to(self.device)
 
