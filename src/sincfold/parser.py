@@ -28,7 +28,7 @@ def parser():
     )
 
     parser_train.add_argument(
-        "--valid_file",
+        "--valid-file",
         type=str,
         help="Validation dataset to stop training. If not provided, validation split is randomly generated from training data. Columns are the same as training",
     )
@@ -46,10 +46,8 @@ def parser():
         help="Maximum number of training epochs",
     )
     parser.add_argument(
-        "--cache",
-        action=argparse.BooleanOptionalAction,
-        default=True,
-        help="Cache of data for training (default: cache is used)",
+        "--no-cache",
+        action="store_true", help="Cache of data for training (default: cache is used)",
     )
 
     # test parser

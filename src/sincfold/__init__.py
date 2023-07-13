@@ -17,20 +17,23 @@ def main():
     
     args = parser()
     
-    if args.cache and args.command == "train":
+    if not args.no_cache and args.command == "train":
         cache_path = "cache/"
-        if not os.path.isdir(cache_path):
-            os.makedirs(cache_path)
     else:
         cache_path = None
 
     config= {"device": args.d, "batch_size": args.batch,  "use_restrictions": args.use_restrictions, 
              "valid_split": 0.1, "max_len": 512, "verbose": not args.quiet, "cache_path": cache_path}
+    
     if "max_epochs" in args:
         config["max_epochs"] = args.max_epochs
 
     if args.config is not None:
         config.update(json.load(open(args.config)))
+
+    if config["cache_path"] is not None:
+        shutil.rmtree(cache_path, ignore_errors=True)
+        os.makedirs(cache_path)
 
     # Reproducibility
     tr.manual_seed(42)
