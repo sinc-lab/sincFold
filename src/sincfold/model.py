@@ -19,11 +19,11 @@ def sincfold(pretrained=False, weights=None, **kwargs):
     model = SincFold(**kwargs)
     if pretrained:
         print("Load pretrained weights...")
-        model.load_state_dict(tr.hub.load_state_dict_from_url(SINCFOLD_WEIGHTS))
+        model.load_state_dict(tr.hub.load_state_dict_from_url(SINCFOLD_WEIGHTS, map_location=tr.device(model.device)))
     else:
         if weights is not None:
             print(f"Load weights from {weights}")
-            model.load_state_dict(tr.load(weights))
+            model.load_state_dict(tr.load(weights, map_location=tr.device(model.device)))
         else:
             print("No weights provided, using random initialization")
         
@@ -259,7 +259,7 @@ class SincFold(nn.Module):
             loader = tqdm(loader)
 
         with tr.no_grad():
-            for batch in loader:  # seq_emb, Mc, seq_len, mask, prob_mask, seqid, sequence
+            for batch in loader:  
                 X = batch[0].to(self.device)
                 y = batch[1].to(self.device)
                 lengths = batch[2]
@@ -295,12 +295,12 @@ class SincFold(nn.Module):
 
         predictions = []
         with tr.no_grad():
-            for batch in loader:  # seq_emb, Mc, seq_len, mask, prob_mask, seqid, sequence
+            for batch in loader: # X, Y, L, mask, seqid, sequence, [prob_mask]
                 X = batch[0].to(self.device)
                 lengths = batch[2]
                 mask = batch[3]
-                seqid = batch[5]
-                sequences = batch[6]
+                seqid = batch[4]
+                sequences = batch[5]
 
                 y_pred = self(X, *batch[2:])
                 
