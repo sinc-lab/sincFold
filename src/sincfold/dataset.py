@@ -10,13 +10,13 @@ from sincfold.utils import valid_mask, prob_mat, bp2matrix, dot2bp
 
 class SeqDataset(Dataset):
     def __init__(
-        self, dataset_path, min_len=0, max_len=512, verbose=False, cache=None, for_prediction=False, 
+        self, dataset_path, min_len=0, max_len=512, verbose=False, cache_path=None, for_prediction=False, 
         use_restrictions=False, **kargs):
         self.max_len = max_len
         self.verbose = verbose
-        if cache is not None and not os.path.isdir(cache):
-            os.mkdir(cache)
-        self.cache = cache
+        if cache_path is not None and not os.path.isdir(cache_path):
+            os.mkdir(cache_path)
+        self.cache = cache_path
 
         # Loading dataset
         data = pd.read_csv(dataset_path)
@@ -125,4 +125,3 @@ def pad_batch(batch):
         return seq_emb_pad, Mc_pad, L, mask_pad, seqid, sequence, prob_mask_pad
     else:
         return seq_emb_pad, Mc_pad, L, mask_pad, seqid, sequence
-    
