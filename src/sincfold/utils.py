@@ -168,6 +168,8 @@ def bp2matrix(L, base_pairs):
 def read_ct(ctfile):
     """Read ct file, return sequence and base_pairs"""
     seq, bp = [], []
+    
+    k = 1
     for line in open(ctfile):
         if line[0] == "#" or len(line.strip()) == 0:
             # comment
@@ -179,7 +181,10 @@ def read_ct(ctfile):
             continue
 
         n1, n2 = int(line[0]), int(line[4])
+        if k != n1: # add missing nucleotides as N
+            seq += ["N"] * (n1-k)
         seq.append(line[1])
+        k = len(seq) + 1
         if n2 > 0 and (n1 < n2):
             bp.append([n1, n2])
     return "".join(seq), bp
