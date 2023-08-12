@@ -190,8 +190,14 @@ def read_ct(ctfile):
     return "".join(seq), bp
 
 
-def write_ct(fname, seqid, seq, base_pairs_dict):
-    with open(f"{fname}.ct", "w") as fout:
+def write_ct(fname, seqid, seq, base_pairs):
+    """Write ct file from sequence and base pairs. Base_pairs should be 1-based and unique per nt"""
+    base_pairs_dict = {}
+    for bp in base_pairs:
+        base_pairs_dict[bp[0]] = bp[1]
+        base_pairs_dict[bp[1]] = bp[0]
+
+    with open(fname, "w") as fout:
         fout.write(f"{len(seq)} {seqid}\n")
         for k, n in enumerate(seq):
             fout.write(f"{k+1} {n} {k} {k+2} {base_pairs_dict.get(k+1, 0)} {k+1}\n")

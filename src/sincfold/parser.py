@@ -78,7 +78,7 @@ def parser():
     parser_pred.add_argument(
         "-o",
         type=str, dest="output_file", default="pred.csv",
-        help="Output predictions (default: pred.csv)",
+        help="Output path, it can be a .csv file or a directory to hold .ct files (default: pred.csv)",
     )
     parser_pred.add_argument(
         "-w", type=str, dest="model_weights", help="Trained model weights"

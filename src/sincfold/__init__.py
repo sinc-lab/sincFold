@@ -10,7 +10,7 @@ import shutil
 from torch.utils.data import DataLoader
 from sincfold.dataset import SeqDataset, pad_batch
 from sincfold.model import sincfold
-from sincfold.utils import bp2dot, validate_file
+from sincfold.utils import write_ct, validate_file
 from sincfold.parser import parser
 
 def main():
@@ -144,7 +144,15 @@ def main():
 
     if args.command == "pred":
         pred_file = args.pred_file
-        out_file = args.output_file
+        out_path = args.output_file
+
+        _, ext = os.path.splitext(out_path)
+        if ext == "":
+            if os.path.isdir(out_path):
+                raise ValueError(f"Output path {out_path} already exists")
+            os.makedirs(out_path)
+        elif ext != ".csv":
+            raise ValueError(f"Output path must be a .csv file or a folder, not {ext}")
         
         pred_file = validate_file(pred_file)
        
@@ -165,14 +173,11 @@ def main():
         log(f"Start prediction of {pred_file}")
         predictions = net.pred(pred_loader)
         
-        _, ext = os.path.splitext(out_file)
-        if ext == ".fasta":
-            with open(out_file, "w") as f:
-                for i in range(len(predictions)):
-                    item = predictions.iloc[i]
-                    structure = bp2dot(len(item.sequence), item.base_pairs)
-                    f.write(f">{item.id}\n{structure}\n")
+        if ext == ".csv":
+            predictions.to_csv(out_path, index=False)
         else:
-            predictions.to_csv(out_file, index=False)
-                
+            for i in range(len(predictions)):
+                item = predictions.iloc[i]
+                write_ct(os.path.join(out_path, item.id +".ct"), item.id, item.sequence, item.base_pairs)
+            
         
