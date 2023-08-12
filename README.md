@@ -47,9 +47,9 @@ To predict the secondary structure of a list of sequences, using the pretrained 
     
     sincFold pred sample/test.csv -o pred_file.csv
 
-where sample/test.csv is a table with "id" and "sequence", and pred_file.csv adds the "base-pairs" found. Alternativelly, you can use standard fasta files
+where sample/test.csv is a table with "id" and "sequence", and pred_file.csv adds the "base-pairs" found. Alternativelly, you can use standard fasta format as input and ct format as output: 
 
-    sincFold pred sample/test.fasta -o pred_file.fasta
+    sincFold pred sample/test.fasta -o pred_ct_files/
 
 ## Training and testing models
 
