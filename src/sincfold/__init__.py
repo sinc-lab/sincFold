@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from sincfold.dataset import SeqDataset, pad_batch
 from sincfold.model import sincfold
 from sincfold.embeddings import NT_DICT
-from sincfold.utils import write_ct, validate_file
+from sincfold.utils import write_ct, validate_file, ct2dot
 from sincfold.parser import parser
 
 def main():
@@ -192,12 +192,13 @@ def main():
         if ext == "console":
             for i in range(len(predictions)):
                 item = predictions.iloc[i]
-                ctfile = os.path.join("tmp.ct")
-                write_ct(ctfile, item.id, item.sequence, item.base_pairs)
+                ctfile = "tmp.ct"
+                dotbracket = ct2dot(ctfile)
+                print(item.id)
+                print(item.sequence)
+                print(dotbracket)
                 print()
-                for line in open(ctfile):
-                    print(line.strip())
-            os.remove("tmp.ct")
+            os.remove(ctfile)
         elif ext == ".csv":
             predictions.to_csv(out_path, index=False)
         else:

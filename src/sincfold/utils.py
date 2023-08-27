@@ -5,6 +5,8 @@ import torch as tr
 import pandas as pd
 
 from sincfold.embeddings import NT_DICT
+from sincfold import __path__ as sincfold_path
+import subprocess as sp 
 
 # All possible matching brackets for base pairing
 MATCHING_BRACKETS = [
@@ -255,6 +257,14 @@ def find_pseudoknots(base_pairs):
                 if [k, l] not in pseudoknots:
                     pseudoknots.append([k, l])
     return pseudoknots
+
+def ct2dot(ct_file):
+    if not os.path.isfile(ct_file) or os.path.splitext(ct_file)[1] != ".ct":
+        raise ValueError("ct2dot requires a .ct file")
+    sp.call(f"export DATAPATH={sincfold_path[0]}/tools/ct2dot/data_tables; {sincfold_path[0]}/tools/ct2dot/ct2dot {ct_file} 1 tmp.dot", shell=True)    
+    dotbracket = open("tmp.dot").readlines()[2].strip()
+    os.remove("tmp.dot")
+    return dotbracket
 
 def bp2dot(L, base_pairs):
     """Create an inversible dot-bracket notation from base pairs"""

@@ -4,4 +4,4 @@ import sys
 
 site.ENABLE_USER_SITE = "--user" in sys.argv[1:]
 
-setup()
+setup(package_data={'sincFold': ['tools/*']})
