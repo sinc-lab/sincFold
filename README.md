@@ -4,7 +4,7 @@ This is the repository for sincFold, a new RNA folding prediction tool based on 
 
 
 <p align="center">
-<img src="abstract.png" alt="abstract">
+<img src="abstract.svg" alt="abstract">
 </p>
 
 ```bibtex
