@@ -185,7 +185,19 @@ def main():
                 
         log(f"Start prediction of {pred_file}")
         predictions = net.pred(pred_loader)
-        
+        from sincfold.utils import draw_structure
+        if args.draw:
+            for i in range(len(predictions)):
+                item = predictions.iloc[i]
+                ctfile = "tmp.ct"
+                write_ct(ctfile, item.id, item.sequence, item.base_pairs)
+                dotbracket = ct2dot(ctfile)
+                
+                png_file = item.id +".png"
+                if out_path is not None and os.path.isdir(out_path):
+                    png_file = os.path.join(out_path, item.id +".png")
+                draw_structure(png_file, item.sequence, dotbracket)
+
         if pred_file == "console_input_tmp.csv":
             os.remove(pred_file)
 
@@ -193,6 +205,7 @@ def main():
             for i in range(len(predictions)):
                 item = predictions.iloc[i]
                 ctfile = "tmp.ct"
+                write_ct(ctfile, item.id, item.sequence, item.base_pairs)
                 dotbracket = ct2dot(ctfile)
                 print(item.id)
                 print(item.sequence)

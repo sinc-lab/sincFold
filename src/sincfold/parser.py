@@ -84,5 +84,7 @@ def parser():
         "-w", type=str, dest="model_weights", help="Trained model weights"
     )
 
+    parser_pred.add_argument("--draw", action="store_true", help="Draw structure (default: False)") 
+
     return parser.parse_args()
     

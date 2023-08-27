@@ -8,6 +8,9 @@ from sincfold.embeddings import NT_DICT
 from sincfold import __path__ as sincfold_path
 import subprocess as sp 
 
+CT2DOT_PATH = f"export DATAPATH={sincfold_path[0]}/tools/ct2dot/data_tables; {sincfold_path[0]}/tools/ct2dot/ct2dot"
+VARNA_PATH = f"{sincfold_path[0]}/tools/varna/VARNAv3-93.jar"
+
 # All possible matching brackets for base pairing
 MATCHING_BRACKETS = [
     ["(", ")"],
@@ -258,10 +261,19 @@ def find_pseudoknots(base_pairs):
                     pseudoknots.append([k, l])
     return pseudoknots
 
+def draw_structure(png_file, sequence, dotbracket, resolution=10):
+
+    try:
+        sp.run("java -version", shell=True, check=True)
+    except:
+        raise ValueError("Java is not installed, it is required to draw an image of the structure.")
+    
+    sp.run(f'java -cp {VARNA_PATH} fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN {sequence} -structureDBN "{dotbracket}" -o  {png_file} -resolution {resolution}', shell=True)
+    
 def ct2dot(ct_file):
     if not os.path.isfile(ct_file) or os.path.splitext(ct_file)[1] != ".ct":
         raise ValueError("ct2dot requires a .ct file")
-    sp.call(f"export DATAPATH={sincfold_path[0]}/tools/ct2dot/data_tables; {sincfold_path[0]}/tools/ct2dot/ct2dot {ct_file} 1 tmp.dot", shell=True)    
+    sp.run(f"{CT2DOT_PATH} {ct_file} 1 tmp.dot", shell=True, capture_output=True)    
     dotbracket = open("tmp.dot").readlines()[2].strip()
     os.remove("tmp.dot")
     return dotbracket
