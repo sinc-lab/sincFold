@@ -10,7 +10,7 @@ def parser():
     parser.add_argument("-c", "--config", type=str, help="Config file (optional, overrides any other options)")
     parser.add_argument("-d", type=str, default="cpu", help="Device ('cpu' or 'cuda')")
     parser.add_argument("-batch", type=int, default=4, help="Batch size for handling sequences")
-    parser.add_argument("--use-restrictions", action="store_true", help="Use external restriction matrix (default: False)")
+    #parser.add_argument("--use-restrictions", action="store_true", help="Use external restriction matrix (default: False)")
     parser.add_argument("-j", type=int, default=4, help="Number of parallel workers")
     parser.add_argument("--quiet", action="store_true", help="Quiet mode (default: False)") 
     
@@ -77,7 +77,7 @@ def parser():
     )
     parser_pred.add_argument(
         "-o",
-        type=str, dest="output_file", default="pred.csv",
+        type=str, dest="output_file", 
         help="Output path, it can be a .csv file or a directory to hold .ct files (default: pred.csv)",
     )
     parser_pred.add_argument(

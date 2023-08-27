@@ -10,6 +10,7 @@ import shutil
 from torch.utils.data import DataLoader
 from sincfold.dataset import SeqDataset, pad_batch
 from sincfold.model import sincfold
+from sincfold.embeddings import NT_DICT
 from sincfold.utils import write_ct, validate_file
 from sincfold.parser import parser
 
@@ -22,7 +23,7 @@ def main():
     else:
         cache_path = None
 
-    config= {"device": args.d, "batch_size": args.batch,  "use_restrictions": args.use_restrictions, 
+    config= {"device": args.d, "batch_size": args.batch,  "use_restrictions": False, 
              "valid_split": 0.1, "max_len": 512, "verbose": not args.quiet, "cache_path": cache_path}
     
     if "max_epochs" in args:
@@ -143,21 +144,33 @@ def main():
             log(summary)
 
     if args.command == "pred":
-        pred_file = args.pred_file
+        pred_input = args.pred_file
         out_path = args.output_file
 
-        _, ext = os.path.splitext(out_path)
-        if ext == "":
-            if os.path.isdir(out_path):
-                raise ValueError(f"Output path {out_path} already exists")
-            os.makedirs(out_path)
-        elif ext != ".csv":
-            raise ValueError(f"Output path must be a .csv file or a folder, not {ext}")
+        if out_path is None:
+            ext = "console"
+        else:
+            _, ext = os.path.splitext(out_path)
+            if ext == "":
+                if os.path.isdir(out_path):
+                    raise ValueError(f"Output path {out_path} already exists")
+                os.makedirs(out_path)
+            elif ext != ".csv":
+                raise ValueError(f"Output path must be a .csv file or a folder, not {ext}")
         
-        pred_file = validate_file(pred_file)
-       
+        if os.path.isfile(pred_input):
+            pred_file = validate_file(pred_input)
+        else:
+            nt_set = set([i for item  in list(NT_DICT.values()) for i in item] + list(NT_DICT.keys()))
+            if set(pred_input).issubset(nt_set):
+                pred_file = f"console_input_tmp.csv"
+                with open(pred_file, "w") as f:
+                    f.write("id,sequence\n")
+                    f.write(f"console_input,{pred_input}\n")
+            else:
+                raise ValueError(f"Input have invalid inputs, nucleotides should be picked from: {nt_set}")
         pred_loader = DataLoader(
-            SeqDataset(pred_file, max_len=config["max_len"], for_prediction=True, use_restrictions=args.use_restrictions),
+            SeqDataset(pred_file, max_len=config["max_len"], for_prediction=True, use_restrictions=config["use_restrictions"]),
             batch_size=config["batch_size"],
             shuffle=False,
             num_workers=args.j,
@@ -173,7 +186,19 @@ def main():
         log(f"Start prediction of {pred_file}")
         predictions = net.pred(pred_loader)
         
-        if ext == ".csv":
+        if pred_file == "console_input_tmp.csv":
+            os.remove(pred_file)
+
+        if ext == "console":
+            for i in range(len(predictions)):
+                item = predictions.iloc[i]
+                ctfile = os.path.join("tmp.ct")
+                write_ct(ctfile, item.id, item.sequence, item.base_pairs)
+                print()
+                for line in open(ctfile):
+                    print(line.strip())
+            os.remove("tmp.ct")
+        elif ext == ".csv":
             predictions.to_csv(out_path, index=False)
         else:
             for i in range(len(predictions)):
