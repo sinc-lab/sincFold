@@ -273,9 +273,14 @@ def draw_structure(png_file, sequence, dotbracket, resolution=10):
 def ct2dot(ct_file):
     if not os.path.isfile(ct_file) or os.path.splitext(ct_file)[1] != ".ct":
         raise ValueError("ct2dot requires a .ct file")
-    sp.run(f"{CT2DOT_PATH} {ct_file} 1 tmp.dot", shell=True, capture_output=True)    
-    dotbracket = open("tmp.dot").readlines()[2].strip()
-    os.remove("tmp.dot")
+    try: 
+        sp.run(f"{CT2DOT_PATH} {ct_file} 1 tmp.dot", shell=True)
+        dotbracket = open("tmp.dot").readlines()[2].strip()
+        os.remove("tmp.dot")
+    except: 
+        print("Error in ct2dot: check .ct file")
+        dotbracket = ""
+
     return dotbracket
 
 def bp2dot(L, base_pairs):
