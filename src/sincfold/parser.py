@@ -71,6 +71,10 @@ def parser():
         "pred", help="Predict structures for a list of sequences"
     )
     parser_pred.add_argument(
+        "--name", type=str, default="console_input", dest="sequence_name", help="Sequence name (default: console_input)"
+    )
+
+    parser_pred.add_argument(
         "pred_file",
         type=str,
         help="Dataset to predict. It can be a csv file with 'id' and 'sequence' columns or a fasta file",
@@ -85,6 +89,7 @@ def parser():
     )
 
     parser_pred.add_argument("--draw", action="store_true", help="Draw structure (default: False)") 
+    parser_pred.add_argument("--draw-resolution", default=5, help="Drawing resolution (default: 5 times the base)") 
 
     return parser.parse_args()
     

@@ -264,7 +264,7 @@ def find_pseudoknots(base_pairs):
 def draw_structure(png_file, sequence, dotbracket, resolution=10):
 
     try:
-        sp.run("java -version", shell=True, check=True)
+        sp.run("java -version", shell=True, check=True, capture_output=True)
     except:
         raise ValueError("Java is not installed, it is required to draw an image of the structure.")
     

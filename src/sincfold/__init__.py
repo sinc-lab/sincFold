@@ -166,7 +166,8 @@ def main():
                 pred_file = f"console_input_tmp.csv"
                 with open(pred_file, "w") as f:
                     f.write("id,sequence\n")
-                    f.write(f"console_input,{pred_input}\n")
+                    f.write(f"{args.sequence_name},{pred_input}\n")
+                
             else:
                 raise ValueError(f"Input have invalid inputs, nucleotides should be picked from: {nt_set}")
         pred_loader = DataLoader(
@@ -196,7 +197,7 @@ def main():
                 png_file = item.id +".png"
                 if out_path is not None and os.path.isdir(out_path):
                     png_file = os.path.join(out_path, item.id +".png")
-                draw_structure(png_file, item.sequence, dotbracket)
+                draw_structure(png_file, item.sequence, dotbracket, resolution=args.draw_resolution)
 
         if pred_file == "console_input_tmp.csv":
             os.remove(pred_file)

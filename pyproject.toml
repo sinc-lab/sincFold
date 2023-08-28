@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sincfold"
-version = "0.5" 
+version = "0.6" 
 authors = [
   {name="Leandro Bugnon", email="lbugnon@sinc.unl.edu.ar"}]
 description = "An end-to-end method to predict RNA secondary structure based on deep learning"
