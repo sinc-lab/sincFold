@@ -45,7 +45,7 @@ class SeqDataset(Dataset):
 
         datalen = len(data)
 
-        data = data[(data.len > min_len) & (data.len < max_len)]
+        data = data[(data.len >= min_len) & (data.len <= max_len)]
 
         if len(data) < datalen:
             print(

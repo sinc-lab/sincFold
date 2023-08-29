@@ -25,7 +25,7 @@ def main():
         cache_path = None
 
     config= {"device": args.d, "batch_size": args.batch,  "use_restrictions": False, 
-             "valid_split": 0.1, "max_len": 512, "verbose": not args.quiet, "cache_path": cache_path}
+             "valid_split": 0.1, "max_len": args.max_length, "verbose": not args.quiet, "cache_path": cache_path}
     
     if "max_epochs" in args:
         config["max_epochs"] = args.max_epochs
