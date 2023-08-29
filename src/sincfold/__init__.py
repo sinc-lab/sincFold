@@ -13,6 +13,7 @@ from sincfold.model import sincfold
 from sincfold.embeddings import NT_DICT
 from sincfold.utils import write_ct, validate_file, ct2dot
 from sincfold.parser import parser
+from sincfold.utils import draw_structure
 
 def main():
     
@@ -186,7 +187,6 @@ def main():
                 
         log(f"Start prediction of {pred_file}")
         predictions = net.pred(pred_loader)
-        from sincfold.utils import draw_structure
         if args.draw:
             for i in range(len(predictions)):
                 item = predictions.iloc[i]
