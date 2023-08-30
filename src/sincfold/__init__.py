@@ -115,6 +115,8 @@ def main():
             )
             log(msg, open(f"{out_path}train.txt", "a"))
         shutil.rmtree(config["cache_path"], ignore_errors=True)
+        shutil.rmtree(f"{out_path}train.csv", ignore_errors=True)
+        shutil.rmtree(f"{out_path}valid.csv", ignore_errors=True)
 
 
     if args.command == "test":

@@ -7,16 +7,8 @@ This is the repository for sincFold, a new RNA folding prediction tool based on 
 <img src="abstract.png" alt="abstract">
 </p>
 
-```bibtex
-@article{sincFold2023,
-  title={sincFold: end-to-end learning of short- and long-range interactions for RNA folding},
-  author={Leandro A. Bugnon and Leandro Di Persia and Matias Gerard and Jonathan Raad and Santiago Prochetto and Emilio Fenoy and Uciel Chorostecki and Federico Ariel and Georgina Stegmayer and Diego H. Milone},
-  journal={under review},
-  year={2023}
-}
-```
 
-sincFold is a fast and accurate RNA secondary structure prediction method. It is an end-to-end approach that predicts the contact matrix using only the sequence of nucleotides as input. The model is based on a residual neural network that can learn short and long context interactions. Extensive experiments on several benchmark datasets were made, comparing sincFold against classical methods and new models based on deep learning. We demonstrate that sincFold achieves the best performance in comparison with state-of-the-art methods.
+SincFold is a fast and accurate RNA secondary structure prediction method. It is an end-to-end approach that predicts the contact matrix using only the sequence of nucleotides as input. The model is based on a residual neural network that can learn short and long context interactions. Extensive experiments on several benchmark datasets were made, comparing sincFold against classical methods and new models based on deep learning. We demonstrate that sincFold achieves the best performance in comparison with state-of-the-art methods.
 
 A summary of results can be seen in [this notebook](results/summary.ipynb).
 
@@ -40,33 +32,49 @@ and install with:
 
     pip install .
 
-on Windows, you will probably need to add the python scripts folder to the paths 
+on Windows, you will probably need to add the python scripts folder to the PATH. 
 
 ## Predicting sequences
 
-To predict the secondary structure of a list of sequences, using the pretrained weights, use
+To predict the secondary structure of a sequence using the pretrained weights:
     
-    sincFold pred GUAGUCGUGGCCGAGUGGUUAAGGCGAUGGACUAGAAAUCCAUUGGGGUCUCCCCGCGCAGGUUCGAAUCCUGCCGACUACGCCA
+    sincFold pred AACCGGGUCAGGUCCGGAAGGAAGCAGCCCUAA
 
-This will display the predicted dotbracket structure in the console. sincFold supports files in .csv and .fasta format as inputs, and fasta or CT as outputs.
+This will display the predicted dot-bracket in the console. 
 
-    sincFold pred sample/test.fasta -o pred_ct_files/
+SincFold also supports files with multiple sequences in .csv and .fasta format as inputs, and providing .csv or .ct format outputs.
+
+    !echo -e ">seq1\\nAACCGGGUCAGGUCCGGAAGGAAGCAGCCCUAA" > sample.fasta
+    !echo -e ">seq2\\nGUAGUCGUGGCCGAGUGGUUAAGGCGAUGGACUAGAAAUCCAUUGGGGUCUCCCCGCGCAGGUUCGAAUCCUGCCGACUACGCCA" >> sample.fasta
+
+    sincFold pred sample.fasta -o pred_ct_files/
+
+We also provide [this notebook](demo.ipynb) to run the sincFold functions.
 
 ## Training and testing models
 
-A new model can be trained using  
+A new model can be trained using the `train` option. For example, download this training set:
+
+    wget "https://raw.githubusercontent.com/sinc-lab/sincFold/main/sample/train.csv"
+
+and then run sincFold with: 
     
-    sincFold train sample/train.csv -n 10 -o output_path
+    sincFold -d cuda train train.csv -n 10 -o output_path
 
-The option -n limits the maximum number of epochs to get a quick result. 
+The option "-d cuda" requires a GPU (otherwise remove it), and -n limits the maximum number of epochs to get a quick result. The output log and trained model will be saved in the directory `output_path`. 
 
-Then, a different test set can be evaluated with 
+Then, a different test set can be evaluated with the `test` option. You can download this sample file form:    
+ 
+    wget "https://raw.githubusercontent.com/sinc-lab/sincFold/main/sample/test.csv"
 
-    sincFold test sample/test.csv -w output_path/weights.pmt
+and test the model with:
 
-The model path (-w) is optional, if ommited the pretrained weights are used.
+    sincFold test test.csv -w output_path/weights.pmt
 
-## Reproducing our results
+The model path (-w) is optional, if omitted the pretrained weights are used.
+
+
+## Reproducible research
 
 You can run the complete train and test scheme using the following code (in this case set up benchmarkII and fold 0 data partition). 
 
@@ -77,7 +85,7 @@ import pandas as pd
 out_path = f"working_path/"
 os.mkdir(out_path)
 
-# read dataset and predefined partitions
+# read dataset and predefined partitions (the files are available in this repository)
 dataset = pd.read_csv("data/benchmarkII.csv", index_col="id")
 partitions = pd.read_csv("data/benchmarkII_splits.csv")
 
@@ -88,9 +96,19 @@ dataset.loc[partitions[(partitions.fold_number==0) & (partitions.partition=="tes
 
 then call the training and testing functions
 
-
     sincFold -d cuda train working_path/train.csv --valid_file working_path/valid.csv -o working_path/output/
 
     sincFold -d cuda test working_path/test.csv -w working_path/output/weights.pmt
 
 Using a GPU for training is recommended (with the option '-d cuda'). The complete process may take about 3hs using a RTX A5000.
+
+```bibtex
+@article{sincFold2023,
+  title={sincFold: end-to-end learning of short- and long-range interactions for RNA folding},
+  author={Leandro A. Bugnon and Leandro Di Persia and Matias Gerard and Jonathan Raad and 
+  Santiago Prochetto and Emilio Fenoy and Uciel Chorostecki and Federico Ariel and 
+  Georgina Stegmayer and Diego H. Milone},
+  journal={under review},
+  year={2023}
+}
+```
