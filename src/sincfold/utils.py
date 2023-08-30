@@ -8,13 +8,15 @@ from sincfold.embeddings import NT_DICT
 from sincfold import __path__ as sincfold_path
 import subprocess as sp 
 from platform import system
+import warnings
 
-
-CT2DOT_CALL = f"export DATAPATH={sincfold_path[0]}/tools/ct2dot/data_tables; {sincfold_path[0]}/tools/ct2dot/ct2dot"
+CT2DOT_CALL = f"export DATAPATH={sincfold_path[0]}/tools/RNAstructure/data_tables; {sincfold_path[0]}/tools/RNAstructure/ct2dot"
+DRAW_CALL = f"export DATAPATH={sincfold_path[0]}/tools/RNAstructure/data_tables;  {sincfold_path[0]}/tools/RNAstructure/draw -c --svg -n 1"
 VARNA_PATH = f"{sincfold_path[0]}/tools/varna/VARNAv3-93.jar"
 if system() == "Windows":
-    CT2DOT_CALL = ""
     VARNA_PATH = ""
+    CT2DOT_CALL = ""
+    DRAW_CALL = ""
 
 # All possible matching brackets for base pairing
 MATCHING_BRACKETS = [
@@ -266,15 +268,20 @@ def find_pseudoknots(base_pairs):
                     pseudoknots.append([k, l])
     return pseudoknots
 
-def draw_structure(png_file, sequence, dotbracket, resolution=10):
+def dot2png(png_file, sequence, dotbracket, resolution=10):
 
     try:
         sp.run("java -version", shell=True, check=True, capture_output=True)
+        sp.run(f'java -cp {VARNA_PATH} fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN {sequence} -structureDBN "{dotbracket}" -o  {png_file} -resolution {resolution}', shell=True)
     except:
-        raise ValueError("Java is not installed, it is required to draw an image of the structure.")
+        warnings.warn("Java Runtime Environment failed trying to run VARNA. Check if it is installed.")
     
-    sp.run(f'java -cp {VARNA_PATH} fr.orsay.lri.varna.applications.VARNAcmd -sequenceDBN {sequence} -structureDBN "{dotbracket}" -o  {png_file} -resolution {resolution}', shell=True)
     
+def ct2png(svg_file, ct_file):
+    
+    sp.run(f'{DRAW_CALL} {ct_file} {svg_file}', shell=True)
+
+
 def ct2dot(ct_file):
     if not os.path.isfile(ct_file) or os.path.splitext(ct_file)[1] != ".ct":
         raise ValueError("ct2dot requires a .ct file")

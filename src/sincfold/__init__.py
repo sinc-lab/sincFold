@@ -13,7 +13,7 @@ from sincfold.model import sincfold
 from sincfold.embeddings import NT_DICT
 from sincfold.utils import write_ct, validate_file, ct2dot
 from sincfold.parser import parser
-from sincfold.utils import draw_structure
+from sincfold.utils import dot2png, ct2png
 
 def main():
     
@@ -196,9 +196,10 @@ def main():
                 
                 png_file = item.id +".png"
                 if out_path is not None and os.path.isdir(out_path):
-                    png_file = os.path.join(out_path, item.id +".png")
+                    png_file = os.path.join(out_path, png_file)
                 if dotbracket:
-                    draw_structure(png_file, item.sequence, dotbracket, resolution=args.draw_resolution)
+                    dot2png(png_file, item.sequence, dotbracket, resolution=args.draw_resolution)
+                ct2png(png_file.replace(".png", ".svg"), "tmp.ct")
 
         if console_input:
             os.remove(pred_file)

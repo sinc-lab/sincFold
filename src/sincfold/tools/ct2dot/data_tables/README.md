@@ -1,1 +1,0 @@
-ct2dot executable from RNAstructure package
