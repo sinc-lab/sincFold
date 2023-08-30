@@ -40,6 +40,8 @@ and install with:
 
     pip install .
 
+on Windows, you will probably need to add the python scripts folder to the paths 
+
 ## Predicting sequences
 
 To predict the secondary structure of a list of sequences, using the pretrained weights, use
