@@ -214,7 +214,6 @@ def main():
                 print(item.sequence)
                 print(dotbracket)
                 print()
-            os.remove(ctfile)
         elif ext == ".csv":
             predictions.to_csv(out_path, index=False)
         else:

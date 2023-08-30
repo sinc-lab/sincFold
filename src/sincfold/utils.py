@@ -279,7 +279,7 @@ def dot2png(png_file, sequence, dotbracket, resolution=10):
     
 def ct2png(svg_file, ct_file):
     
-    sp.run(f'{DRAW_CALL} {ct_file} {svg_file}', shell=True)
+    sp.run(f'{DRAW_CALL} {ct_file} {svg_file}', shell=True, capture_output=True)
 
 
 def ct2dot(ct_file):
@@ -287,7 +287,7 @@ def ct2dot(ct_file):
         raise ValueError("ct2dot requires a .ct file")
     dotbracket = ""
     if CT2DOT_CALL:
-        sp.run(f"{CT2DOT_CALL} {ct_file} 1 tmp.dot", shell=True)
+        sp.run(f"{CT2DOT_CALL} {ct_file} 1 tmp.dot", shell=True, capture_output=True)
         try: 
             dotbracket = open("tmp.dot").readlines()[2].strip()
             os.remove("tmp.dot")
