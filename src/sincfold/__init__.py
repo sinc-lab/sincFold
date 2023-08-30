@@ -162,6 +162,7 @@ def main():
         if os.path.isfile(pred_input):
             pred_file = validate_file(pred_input)
         else:
+            pred_input = pred_input.upper().strip()
             nt_set = set([i for item  in list(NT_DICT.values()) for i in item] + list(NT_DICT.keys()))
             if set(pred_input).issubset(nt_set):
                 pred_file = f"console_input_tmp.csv"
