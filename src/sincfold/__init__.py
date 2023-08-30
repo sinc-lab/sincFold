@@ -147,7 +147,7 @@ def main():
     if args.command == "pred":
         pred_input = args.pred_file
         out_path = args.output_file
-
+        console_input = False
         if out_path is None:
             ext = "console"
         else:
@@ -162,10 +162,11 @@ def main():
         if os.path.isfile(pred_input):
             pred_file = validate_file(pred_input)
         else:
+            console_input = True
             pred_input = pred_input.upper().strip()
             nt_set = set([i for item  in list(NT_DICT.values()) for i in item] + list(NT_DICT.keys()))
             if set(pred_input).issubset(nt_set):
-                pred_file = f"console_input_tmp.csv"
+                pred_file = f"{args.sequence_name}.csv"
                 with open(pred_file, "w") as f:
                     f.write("id,sequence\n")
                     f.write(f"{args.sequence_name},{pred_input}\n")
@@ -198,9 +199,10 @@ def main():
                 png_file = item.id +".png"
                 if out_path is not None and os.path.isdir(out_path):
                     png_file = os.path.join(out_path, item.id +".png")
-                draw_structure(png_file, item.sequence, dotbracket, resolution=args.draw_resolution)
+                if dotbracket:
+                    draw_structure(png_file, item.sequence, dotbracket, resolution=args.draw_resolution)
 
-        if pred_file == "console_input_tmp.csv":
+        if console_input:
             os.remove(pred_file)
 
         if ext == "console":

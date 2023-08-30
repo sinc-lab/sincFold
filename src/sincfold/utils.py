@@ -7,9 +7,14 @@ import pandas as pd
 from sincfold.embeddings import NT_DICT
 from sincfold import __path__ as sincfold_path
 import subprocess as sp 
+from platform import system
 
-CT2DOT_PATH = f"export DATAPATH={sincfold_path[0]}/tools/ct2dot/data_tables; {sincfold_path[0]}/tools/ct2dot/ct2dot"
+
+CT2DOT_CALL = f"export DATAPATH={sincfold_path[0]}/tools/ct2dot/data_tables; {sincfold_path[0]}/tools/ct2dot/ct2dot"
 VARNA_PATH = f"{sincfold_path[0]}/tools/varna/VARNAv3-93.jar"
+if system() == "Windows":
+    CT2DOT_CALL = ""
+    VARNA_PATH = ""
 
 # All possible matching brackets for base pairing
 MATCHING_BRACKETS = [
@@ -273,14 +278,17 @@ def draw_structure(png_file, sequence, dotbracket, resolution=10):
 def ct2dot(ct_file):
     if not os.path.isfile(ct_file) or os.path.splitext(ct_file)[1] != ".ct":
         raise ValueError("ct2dot requires a .ct file")
-    try: 
-        sp.run(f"{CT2DOT_PATH} {ct_file} 1 tmp.dot", shell=True)
-        dotbracket = open("tmp.dot").readlines()[2].strip()
-        os.remove("tmp.dot")
-    except: 
-        print("Error in ct2dot: check .ct file")
-        dotbracket = ""
-
+    dotbracket = ""
+    if CT2DOT_CALL:
+        sp.run(f"{CT2DOT_CALL} {ct_file} 1 tmp.dot", shell=True)
+        try: 
+            dotbracket = open("tmp.dot").readlines()[2].strip()
+            os.remove("tmp.dot")
+        except FileNotFoundError: 
+            print("Error in ct2dot: check .ct file")
+    else:
+        print("Dotbracket conversion only available on linux")
+    
     return dotbracket
 
 def bp2dot(L, base_pairs):
