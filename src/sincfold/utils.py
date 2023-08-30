@@ -288,7 +288,6 @@ def ct2dot(ct_file):
             print("Error in ct2dot: check .ct file")
     else:
         print("Dotbracket conversion only available on linux")
-    
     return dotbracket
 
 def bp2dot(L, base_pairs):

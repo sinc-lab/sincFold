@@ -119,9 +119,7 @@ def main():
 
     if args.command == "test":
         test_file = args.test_file
-
         test_file = validate_file(test_file)
-
         test_loader = DataLoader(
             SeqDataset(test_file, **config),
             batch_size=config["batch_size"],
