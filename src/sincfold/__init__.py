@@ -13,7 +13,9 @@ from sincfold.model import sincfold
 from sincfold.embeddings import NT_DICT
 from sincfold.utils import write_ct, validate_file, ct2dot
 from sincfold.parser import parser
-from sincfold.utils import dot2png, ct2png
+from sincfold.utils import dot2png, ct2svg
+
+__version__ = "0.11"
 
 def main():
     
@@ -50,74 +52,10 @@ def main():
             file.flush()
 
     if args.command == "train":
-        if args.out_path is None:
-            out_path = f"results_{str(datetime.today()).replace(' ', '-')}/"
-        else:
-            out_path = args.out_path
-        if out_path[-1] != "/":
-            out_path += "/"
-        print("working on", out_path)
-        if not os.path.isdir(out_path):
-            os.makedirs(out_path)
-        else:
-            raise ValueError(f"Output path {out_path} already exists")
-
-        if args.valid_file is not None:
-            train_file = args.train_file
-            valid_file = args.valid_file
-        else:
-            valid_split = config["valid_split"]
-            train_file = f"{out_path}train.csv"
-            valid_file = f"{out_path}valid.csv"
-
-            data = pd.read_csv(args.train_file)
-            val_data = data.sample(frac = valid_split)
-            val_data.to_csv(valid_file, index=False)
-            data.drop(val_data.index).to_csv(train_file, index=False)
-            
-        train_loader = DataLoader(
-            SeqDataset(train_file, **config),
-            batch_size=config["batch_size"],
-            shuffle=True,
-            num_workers=args.j,
-            collate_fn=pad_batch,
-        )
-        valid_loader = DataLoader(
-            SeqDataset(valid_file, **config),
-            batch_size=config["batch_size"],
-            shuffle=False,
-            num_workers=args.j,
-            collate_fn=pad_batch,
-        )
-
-        net = sincfold(**config)
         
-        best_f1, patience_counter = -1, 0
-        log("Start training...")
-        for epoch in range(config["max_epochs"]):
-            train_metrics = net.fit(train_loader)
-
-            val_metrics = net.test(valid_loader)
-
-            if val_metrics["f1"] > best_f1:
-                best_f1 = val_metrics["f1"]
-                tr.save(net.state_dict(), f"{out_path}weights.pmt")
-                patience_counter = 0
-            else:
-                patience_counter += 1
-                if patience_counter > 30:
-                    break
-            msg = (
-                f"epoch {epoch}:"
-                + " ".join([f"train_{k} {v:.3f}" for k, v in train_metrics.items()])
-                + " "
-                + " ".join([f"val_{k} {v:.3f}" for k, v in val_metrics.items()])
-            )
-            log(msg, open(f"{out_path}train.txt", "a"))
-        shutil.rmtree(config["cache_path"], ignore_errors=True)
-        shutil.rmtree(f"{out_path}train.csv", ignore_errors=True)
-        shutil.rmtree(f"{out_path}valid.csv", ignore_errors=True)
-
+        print("working on", out_path)
+        
+        train(out_path, args.train_file, config, args.valid_file, args.j)
 
     if args.command == "test":
         test_file = args.test_file
@@ -201,7 +139,7 @@ def main():
                     png_file = os.path.join(out_path, png_file)
                 if dotbracket:
                     dot2png(png_file, item.sequence, dotbracket, resolution=args.draw_resolution)
-                ct2png(png_file.replace(".png", ".svg"), "tmp.ct")
+                ct2svg("tmp.ct", png_file.replace(".png", ".svg"))
 
         if console_input:
             os.remove(pred_file)
@@ -224,3 +162,80 @@ def main():
                 write_ct(os.path.join(out_path, item.id +".ct"), item.id, item.sequence, item.base_pairs)
             
         
+def train(train_file, config={}, out_path=None, valid_file=None, nworkers=2, verbose=True):
+    
+    if out_path is None:
+        out_path = f"results_{str(datetime.today()).replace(' ', '-')}/"
+    else:
+        out_path = out_path
+    if out_path[-1] != "/":
+        out_path += "/"
+        
+    if not os.path.isdir(out_path):
+        os.makedirs(out_path)
+    else:
+        raise ValueError(f"Output path {out_path} already exists")
+
+    if valid_file is not None:
+        train_file = train_file
+        valid_file = valid_file
+    else:
+        valid_split = config["valid_split"]
+        train_file = f"{out_path}train.csv"
+        valid_file = f"{out_path}valid.csv"
+
+        data = pd.read_csv(train_file)
+        val_data = data.sample(frac = valid_split)
+        val_data.to_csv(valid_file, index=False)
+        data.drop(val_data.index).to_csv(train_file, index=False)
+        
+    train_loader = DataLoader(
+        SeqDataset(train_file, **config),
+        batch_size=config["batch_size"],
+        shuffle=True,
+        num_workers=nworkers,
+        collate_fn=pad_batch,
+    )
+    valid_loader = DataLoader(
+        SeqDataset(valid_file, **config),
+        batch_size=config["batch_size"],
+        shuffle=False,
+        num_workers=nworkers,
+        collate_fn=pad_batch,
+    )
+
+    net = sincfold(**config)
+    
+    best_f1, patience_counter = -1, 0
+    if verbose:
+        print("Start training...")
+    for epoch in range(config["max_epochs"]):
+        train_metrics = net.fit(train_loader)
+
+        val_metrics = net.test(valid_loader)
+
+        if val_metrics["f1"] > best_f1:
+            best_f1 = val_metrics["f1"]
+            tr.save(net.state_dict(), f"{out_path}weights.pmt")
+            patience_counter = 0
+        else:
+            patience_counter += 1
+            if patience_counter > 30:
+                break
+        msg = (
+            f"epoch {epoch}:"
+            + " ".join([f"train_{k} {v:.3f}" for k, v in train_metrics.items()])
+            + " "
+            + " ".join([f"val_{k} {v:.3f}" for k, v in val_metrics.items()])
+        )
+        
+        if verbose:
+            print(msg)
+        with open(f"{out_path}train.txt", "a") as f: 
+            f.write(msg + "\n")
+            f.flush()
+            
+    # remove temporal files           
+    shutil.rmtree(config["cache_path"], ignore_errors=True)
+    shutil.rmtree(f"{out_path}train.csv", ignore_errors=True)
+    shutil.rmtree(f"{out_path}valid.csv", ignore_errors=True)

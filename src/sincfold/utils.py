@@ -11,7 +11,7 @@ from platform import system
 import warnings
 
 CT2DOT_CALL = f"export DATAPATH={sincfold_path[0]}/tools/RNAstructure/data_tables; {sincfold_path[0]}/tools/RNAstructure/ct2dot"
-DRAW_CALL = f"export DATAPATH={sincfold_path[0]}/tools/RNAstructure/data_tables;  {sincfold_path[0]}/tools/RNAstructure/draw -c --svg -n 1"
+DRAW_CALL = f"export DATAPATH={sincfold_path[0]}/tools/RNAstructure/data_tables;  {sincfold_path[0]}/tools/RNAstructure/draw -c -u --svg -n 1"
 VARNA_PATH = f"{sincfold_path[0]}/tools/varna/VARNAv3-93.jar"
 if system() == "Windows":
     VARNA_PATH = ""
@@ -277,7 +277,7 @@ def dot2png(png_file, sequence, dotbracket, resolution=10):
         warnings.warn("Java Runtime Environment failed trying to run VARNA. Check if it is installed.")
     
     
-def ct2png(svg_file, ct_file):
+def ct2svg(ct_file, svg_file):
     
     sp.run(f'{DRAW_CALL} {ct_file} {svg_file}', shell=True, capture_output=True)
 
