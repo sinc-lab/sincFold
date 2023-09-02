@@ -49,7 +49,7 @@ SincFold also supports files with multiple sequences in .csv and .fasta format a
 
     sincFold pred sample.fasta -o pred_ct_files/
 
-We also provide [this notebook](demo.ipynb) to run the sincFold functions.
+We also provide [this notebook](https://colab.research.google.com/github/sinc-lab/sincFold/blob/main/results/demo.ipynb) to run the sincFold functions.
 
 ## Training and testing models
 
