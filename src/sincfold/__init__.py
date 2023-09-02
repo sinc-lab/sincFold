@@ -44,11 +44,11 @@ def main():
     random.seed(42)
     np.random.seed(42)
 
-    if args.command == "train":      
-        train(args.out_path, args.train_file, config, args.valid_file, args.j)
+    if args.command == "train": 
+        train(args.train_file, config, args.out_path,  args.valid_file, args.j)
 
     if args.command == "test":
-        test(args.test_file, args.output_file, args.model_weights, config, args.j)
+        test(args.test_file, args.model_weights, args.output_file, config, args.j)
 
     if args.command == "pred":
         pred(args.pred_file, args.sequence_name, args.model_weights, args.output_file, config, args.j, args.draw, args.draw_resolution)    
