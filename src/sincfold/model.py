@@ -40,6 +40,7 @@ class SincFold(nn.Module):
         loss_beta=0,
         use_scheduler=False,
         verbose=True,
+        use_restrictions=False,
         **kwargs
     ):
         """Base classifier model from embedding sequence-
@@ -54,7 +55,8 @@ class SincFold(nn.Module):
         self.config = kwargs
 
         mid_ch = 1
-        if self.config["use_restrictions"]:
+        self.use_restrictions = use_restrictions
+        if use_restrictions:
             mid_ch = 2
 
         # Define architecture
