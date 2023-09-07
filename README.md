@@ -14,7 +14,7 @@ A summary of results can be seen in [this notebook](results/summary.ipynb).
 
 ## Folding RNA sequences
 
-We have a [webserver](https://sinc.unl.edu.ar/web-demo/sincfold/) ([mirror](https://huggingface.co/spaces/lbugnon/sincFold)) running with the latest version. This server admits one sequence at a time. We provide a model pre-trained with validated RNA datasets (ArchiveII, RNAstralign, URS-PDB). Please follow the next instructions if you want to run the model locally.
+We have a [web demo](https://sinc.unl.edu.ar/web-demo/sincfold/) ([mirror](https://huggingface.co/spaces/lbugnon/sincFold)) running with the latest version. This server admits one sequence at a time. We provide a model pre-trained with validated RNA datasets (ArchiveII, RNAstralign, URS-PDB). Please follow the next instructions if you want to run the model locally.
 
 
 ## Install
