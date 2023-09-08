@@ -20,7 +20,8 @@ def contact_f1(ref_batch, pred_batch, L, th=0.5, reduce=True, method="tol"):
         ref = ref[ind].view(l, l)
 
         # pred goes from -inf to inf
-        pred = tr.sigmoid(pred) > th
+        pred = tr.sigmoid(pred)
+        pred[pred<=th] = 0
 
         if method == "triangular":
             f1 = f1_triangular(ref, pred)
