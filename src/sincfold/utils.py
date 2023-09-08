@@ -1,14 +1,16 @@
 # imports
 import os
+import subprocess as sp 
+from platform import system
+import warnings
 import numpy as np
 import torch as tr
 import pandas as pd
 
 from sincfold.embeddings import NT_DICT
 from sincfold import __path__ as sincfold_path
-import subprocess as sp 
-from platform import system
-import warnings
+from sincfold.embeddings import NT_DICT, VOCABULARY
+
 
 CT2DOT_CALL = f"export DATAPATH={sincfold_path[0]}/tools/RNAstructure/data_tables; {sincfold_path[0]}/tools/RNAstructure/ct2dot"
 DRAW_CALL = f"export DATAPATH={sincfold_path[0]}/tools/RNAstructure/data_tables;  {sincfold_path[0]}/tools/RNAstructure/draw -c -u --svg -n 1"
@@ -229,10 +231,24 @@ def split_fasta_rec(s, mfe=True):
 
 def mat2bp(x):
     """Get base-pairs from conection matrix [N, N]. It uses upper
-    triangular matrix only, without the diagonal. Positions are 1-based"""
+    triangular matrix only, without the diagonal. Positions are 1-based. """
     ind = tr.triu_indices(x.shape[0], x.shape[1], offset=1)
     pairs_ind = tr.where(x[ind[0], ind[1]] > 0)[0]
-    return (ind[:, pairs_ind].T + 1).tolist()
+
+    pairs_ind = ind[:, pairs_ind].T
+    # remove multiplets pairs
+    multiplets = []
+    for i, j in pairs_ind:
+        ind = tr.where(pairs_ind[:, 1]==i)[0]
+        if len(ind)>0:
+            pairs = [bp.tolist() for bp in pairs_ind[ind]] + [[i.item(), j.item()]]
+            best_pair = tr.tensor([x[bp[0], bp[1]] for bp in pairs]).argmax()
+                
+            multiplets += [pairs[k] for k in range(len(pairs)) if k!=best_pair]   
+            
+    pairs_ind = [[bp[0]+1, bp[1]+1] for bp in pairs_ind.tolist() if bp not in multiplets]
+ 
+    return pairs_ind
 
 
 def postprocessing(preds, masks):
@@ -328,8 +344,6 @@ def bp2dot(L, base_pairs):
     
     return "".join(dot)
 
-
-from sincfold.embeddings import NT_DICT, VOCABULARY
 def valid_sequence(seq):
     """Check if sequence is valid"""
     return set(seq.upper()) <= (set(NT_DICT.keys()).union(set(VOCABULARY)))
@@ -369,3 +383,21 @@ def validate_file(pred_file):
         raise ValueError("Predicting from a file with format different from .csv or .fasta is not supported")
     
     return pred_file 
+
+def validate_canonical(sequence, base_pairs):
+    if not valid_sequence(sequence):
+        return False, "Invalid sequence"
+
+    for i, j in base_pairs:
+        nt1, nt2 = sequence[i-1], sequence[j-1]
+        if pair_strength((nt1, nt2))==0:
+            return False, f"Invalid base pair: {nt1} {nt2}"
+
+        for k, l in base_pairs:
+            if (k, l) != (i, j):
+                if i in (k, l):
+                    return False, f"Nucleotide {i} is in pair {i, j} and {k, l}"
+                if j in (k, l):
+                    return False, f"Nucleotide {j} is in pair {i, j} and {k, l}"
+
+    return True, ""
