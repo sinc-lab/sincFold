@@ -24,7 +24,7 @@ def contact_f1(ref_batch, pred_batch, L, th=0.5, reduce=True, method="tol"):
         pred[pred<=th] = 0
 
         if method == "triangular":
-            f1 = f1_triangular(ref, pred)
+            f1 = f1_triangular(ref, pred>th)
         elif method == "tol":
             ref = mat2bp(ref)
             pred = mat2bp(pred)
