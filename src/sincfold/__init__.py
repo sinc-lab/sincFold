@@ -15,7 +15,7 @@ from sincfold.utils import write_ct, validate_file, ct2dot
 from sincfold.parser import parser
 from sincfold.utils import dot2png, ct2svg
 
-__version__ = "0.12"
+__version__ = "0.16"
 
 def main():
     
@@ -104,6 +104,7 @@ def train(train_file, config={}, out_path=None, valid_file=None, nworkers=2, ver
     net = sincfold(**config)
     
     best_f1, patience_counter = -1, 0
+    patience = config["patience"] if "patience" in config else 30
     if verbose:
         print("Start training...")
     max_epochs = config["max_epochs"] if "max_epochs" in config else 1000
@@ -118,7 +119,7 @@ def train(train_file, config={}, out_path=None, valid_file=None, nworkers=2, ver
             patience_counter = 0
         else:
             patience_counter += 1
-            if patience_counter > config["patience"] if "patience" in config else 30:
+            if patience_counter > patience:
                 break
         msg = (
             f"epoch {epoch}:"
