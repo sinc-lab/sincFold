@@ -118,7 +118,7 @@ def train(train_file, config={}, out_path=None, valid_file=None, nworkers=2, ver
             patience_counter = 0
         else:
             patience_counter += 1
-            if patience_counter > 30:
+            if patience_counter > config["patience"] if "patience" in config else 30:
                 break
         msg = (
             f"epoch {epoch}:"
