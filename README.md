@@ -44,8 +44,8 @@ This will display the predicted dot-bracket in the console.
 
 SincFold also supports files with multiple sequences in .csv and .fasta format as inputs, and providing .csv or .ct format outputs.
 
-    !echo -e ">seq1\\nAACCGGGUCAGGUCCGGAAGGAAGCAGCCCUAA" > sample.fasta
-    !echo -e ">seq2\\nGUAGUCGUGGCCGAGUGGUUAAGGCGAUGGACUAGAAAUCCAUUGGGGUCUCCCCGCGCAGGUUCGAAUCCUGCCGACUACGCCA" >> sample.fasta
+    echo -e ">seq1\\nAACCGGGUCAGGUCCGGAAGGAAGCAGCCCUAA" > sample.fasta
+    echo -e ">seq2\\nGUAGUCGUGGCCGAGUGGUUAAGGCGAUGGACUAGAAAUCCAUUGGGGUCUCCCCGCGCAGGUUCGAAUCCUGCCGACUACGCCA" >> sample.fasta
 
     sincFold pred sample.fasta -o pred_ct_files/
 
@@ -76,7 +76,7 @@ The model path (-w) is optional, if omitted the pretrained weights are used.
 
 ## Reproducible research
 
-You can run the complete train and test scheme using the following code (in this case set up benchmarkII and fold 0 data partition). 
+You can run prepare train and test partitions using the following code (in this case set up ArchiveII and fold 0 data partition). The "data/" folder can be found in this repository.
 
 ```python
 import os 
@@ -86,8 +86,8 @@ out_path = f"working_path/"
 os.mkdir(out_path)
 
 # read dataset and predefined partitions (the files are available in this repository)
-dataset = pd.read_csv("data/benchmarkII.csv", index_col="id")
-partitions = pd.read_csv("data/benchmarkII_splits.csv")
+dataset = pd.read_csv("data/ArchiveII.csv", index_col="id")
+partitions = pd.read_csv("data/ArchiveII_splits.csv")
 
 dataset.loc[partitions[(partitions.fold_number==0) & (partitions.partition=="train")].id].to_csv(out_path + "train.csv")
 dataset.loc[partitions[(partitions.fold_number==0) & (partitions.partition=="valid")].id].to_csv(out_path + "valid.csv")
@@ -96,11 +96,11 @@ dataset.loc[partitions[(partitions.fold_number==0) & (partitions.partition=="tes
 
 then call the training and testing functions
 
-    sincFold -d cuda train working_path/train.csv --valid_file working_path/valid.csv -o working_path/output/
+    sincFold -d cuda train working_path/train.csv --valid-file working_path/valid.csv -o working_path/output/
 
     sincFold -d cuda test working_path/test.csv -w working_path/output/weights.pmt
 
-Using a GPU for training is recommended (with the option '-d cuda'). The complete process may take about 3hs using a RTX A5000.
+Using a GPU for training is recommended (with the option '-d cuda'). The complete process may take about 3 hs using a RTX A5000.
 
 ```bibtex
 @article{sincFold2023,
