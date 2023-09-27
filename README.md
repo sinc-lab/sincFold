@@ -100,7 +100,7 @@ then call the training and testing functions
 
     sincFold -d cuda test working_path/test.csv -w working_path/output/weights.pmt
 
-Using a GPU for training is recommended (with the option '-d cuda'). The complete process may take about 3 hs using a RTX A5000.
+Using a GPU for training is recommended (with the option '-d cuda'). The complete process may take several hours using a GPUI.
 
 ```bibtex
 @article{sincFold2023,
