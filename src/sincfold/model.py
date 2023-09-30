@@ -181,7 +181,7 @@ class SincFold(nn.Module):
         # resnet block
         y = self.resnet_block(y)
         # output
-        y = self.conv2Dout(tr.relu(y)).squeeze()
+        y = self.conv2Dout(tr.relu(y)).squeeze(1)
 
         y = y.multiply(mask)
 
