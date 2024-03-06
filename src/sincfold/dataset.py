@@ -7,11 +7,14 @@ import pickle
 from sincfold.embeddings import OneHotEmbedding
 from sincfold.utils import valid_mask, prob_mat, bp2matrix, dot2bp
 
-
 class SeqDataset(Dataset):
     def __init__(
         self, dataset_path, min_len=0, max_len=512, verbose=False, cache_path=None, for_prediction=False, 
-        use_restrictions=False, **kargs):
+        interaction_prior="probmat", use_cannonical_mask=False, family_weighted_sample=False, training=False,
+ **kargs):
+        """
+        interaction_prior: none, prob_mat
+        """
         self.max_len = max_len
         self.verbose = verbose
         if cache_path is not None and not os.path.isdir(cache_path):
@@ -20,7 +23,8 @@ class SeqDataset(Dataset):
 
         # Loading dataset
         data = pd.read_csv(dataset_path)
-        
+        self.training = training
+
         if for_prediction:
             assert (
                 "sequence" in data.columns
@@ -54,10 +58,10 @@ class SeqDataset(Dataset):
 
         self.sequences = data.sequence.tolist()
         self.ids = data.id.tolist()
-
         self.embedding = OneHotEmbedding()
         self.embedding_size = self.embedding.emb_size
-        self.use_restrictions = use_restrictions
+        self.interaction_prior = interaction_prior
+        self.use_cannonical_mask = use_cannonical_mask
 
         self.base_pairs = None
         if "base_pairs" in data.columns:
@@ -82,46 +86,55 @@ class SeqDataset(Dataset):
 
             seq_emb = self.embedding.seq2emb(sequence)
 
-            mask = valid_mask(sequence)
-            if self.use_restrictions:
-                prob_mask = prob_mat(sequence)
-                item = [seq_emb, Mc, L, mask, seqid, sequence, prob_mask]
-            else:
-                item = [seq_emb, Mc, L, mask, seqid, sequence]
-                
+            mask = None
+            if self.use_cannonical_mask:
+                mask = valid_mask(sequence)
+            interaction_prior = None
+            if self.interaction_prior == "probmat":
+                interaction_prior = prob_mat(sequence)
+            item = {"embedding": seq_emb, "contact": Mc, "length": L, "canonical_mask": mask,
+                    "id": seqid, "sequence": sequence, "interaction_prior": interaction_prior} 
 
             if self.cache is not None:
                 pickle.dump(item, open(cache, "wb"))
                 
         return item
 
-
 def pad_batch(batch):
-    """batch is a list of (seq_emb, Mc, L, mask, prob_mask, seqid)"""
-    if len(batch[0]) == 7:
-        seq_emb, Mc, L, mask, seqid, sequence, prob_mask = zip(*batch)
+    """batch is a dictionary with different variables lists"""
+    
+    L = [b["length"] for b in batch]
+    embedding_pad = tr.zeros((len(batch), batch[0]["embedding"].shape[0], max(L)))
+    if batch[0]["contact"] is None:
+        contact_pad = None
     else:
-        prob_mask = None
-        seq_emb, Mc, L, mask, seqid, sequence = zip(*batch)
-
-    seq_emb_pad = tr.zeros((len(batch), seq_emb[0].shape[0], max(L)))
-    if Mc[0] is None:
-        Mc_pad = None
+        contact_pad = -tr.ones((len(batch), max(L), max(L)), dtype=tr.long)
+    
+    if batch[0]["canonical_mask"] is None:
+        canonical_mask_pad = None
     else:
-        Mc_pad = -tr.ones((len(batch), max(L), max(L)), dtype=tr.long)
-    mask_pad = tr.zeros((len(batch), max(L), max(L)))
-    if prob_mask is not None:
-        prob_mask_pad = tr.zeros((len(batch), max(L), max(L)))
+        canonical_mask_pad = tr.zeros((len(batch), max(L), max(L)))
+    
+    interaction_prior_pad = None
+    if batch[0]["interaction_prior"] is not None:
+        interaction_prior_pad = tr.zeros((len(batch), max(L), max(L)))
 
     for k in range(len(batch)):
-        seq_emb_pad[k, :, : L[k]] = seq_emb[k]
-        if Mc_pad is not None:
-            Mc_pad[k, : L[k], : L[k]] = Mc[k]
-        mask_pad[k, : L[k], : L[k]] = mask[k]
-        if prob_mask is not None:
-            prob_mask_pad[k, : L[k], : L[k]] = prob_mask[k]
+        embedding_pad[k, :, : L[k]] = batch[k]["embedding"]
+        if contact_pad is not None:
+            contact_pad[k, : L[k], : L[k]] = batch[k]["contact"]
+        if canonical_mask_pad is not None:
+            canonical_mask_pad[k, : L[k], : L[k]] = batch[k]["canonical_mask"]
+        
+        if interaction_prior_pad is not None:
+            interaction_prior_pad[k, : L[k], : L[k]] = batch[k]["interaction_prior"]
 
-    if prob_mask is not None:
-        return seq_emb_pad, Mc_pad, L, mask_pad, seqid, sequence, prob_mask_pad
-    else:
-        return seq_emb_pad, Mc_pad, L, mask_pad, seqid, sequence
+    out_batch = {"contact": contact_pad, 
+                 "embedding": embedding_pad, 
+                 "length": L, 
+                 "canonical_mask": canonical_mask_pad,
+                 "interaction_prior": interaction_prior_pad,
+                 "sequence": [b["sequence"] for b in batch],
+                 "id": [b["id"] for b in batch]}
+    
+    return out_batch
