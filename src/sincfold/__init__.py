@@ -6,6 +6,7 @@ import torch as tr
 from datetime import datetime
 import pandas as pd
 import shutil
+import pickle
 
 from torch.utils.data import DataLoader
 from sincfold.dataset import SeqDataset, pad_batch
@@ -26,7 +27,7 @@ def main():
     else:
         cache_path = None
 
-    config= {"device": args.d, "batch_size": args.batch,  "use_restrictions": False, 
+    config= {"device": args.d, "batch_size": args.batch, 
              "valid_split": 0.1, "max_len": args.max_length, "verbose": not args.quiet, "cache_path": cache_path}
     
     if "max_epochs" in args:
@@ -36,8 +37,8 @@ def main():
         config.update(json.load(open(args.config)))
 
     if config["cache_path"] is not None:
-        shutil.rmtree(cache_path, ignore_errors=True)
-        os.makedirs(cache_path)
+        shutil.rmtree(config["cache_path"], ignore_errors=True)
+        os.makedirs(config["cache_path"])
 
     # Reproducibility
     tr.manual_seed(42)
@@ -48,10 +49,10 @@ def main():
         train(args.train_file, config, args.out_path,  args.valid_file, args.j)
 
     if args.command == "test":
-        test(args.test_file, args.model_weights, args.output_file, config, args.j)
+        test(args.test_file, args.model_weights, args.out_path, config, args.j)
 
     if args.command == "pred":
-        pred(args.pred_file, args.sequence_name, args.model_weights, args.output_file, config, args.j, args.draw, args.draw_resolution)    
+        pred(args.pred_file, model_weights=args.model_weights, out_path=args.out_path, logits=args.logits, config=config, nworkers=args.j, draw=args.draw, draw_resolution=args.draw_resolution)    
         
 def train(train_file, config={}, out_path=None, valid_file=None, nworkers=2, verbose=True):
     
@@ -87,11 +88,11 @@ def train(train_file, config={}, out_path=None, valid_file=None, nworkers=2, ver
         
     batch_size = config["batch_size"] if "batch_size" in config else 4
     train_loader = DataLoader(
-        SeqDataset(train_file, **config),
-        batch_size=batch_size,
+        SeqDataset(train_file, training=True, **config),
+        batch_size=batch_size, 
         shuffle=True,
         num_workers=nworkers,
-        collate_fn=pad_batch,
+        collate_fn=pad_batch
     )
     valid_loader = DataLoader(
         SeqDataset(valid_file, **config),
@@ -101,13 +102,15 @@ def train(train_file, config={}, out_path=None, valid_file=None, nworkers=2, ver
         collate_fn=pad_batch,
     )
 
-    net = sincfold(**config)
+    net = sincfold(train_len=len(train_loader), **config)
     
     best_f1, patience_counter = -1, 0
     patience = config["patience"] if "patience" in config else 30
     if verbose:
         print("Start training...")
     max_epochs = config["max_epochs"] if "max_epochs" in config else 1000
+    logfile = os.path.join(out_path, "train_log.csv") 
+        
     for epoch in range(max_epochs):
         train_metrics = net.fit(train_loader)
 
@@ -121,18 +124,21 @@ def train(train_file, config={}, out_path=None, valid_file=None, nworkers=2, ver
             patience_counter += 1
             if patience_counter > patience:
                 break
-        msg = (
-            f"epoch {epoch}:"
-            + " ".join([f"train_{k} {v:.3f}" for k, v in train_metrics.items()])
-            + " "
-            + " ".join([f"val_{k} {v:.3f}" for k, v in val_metrics.items()])
-        )
         
-        if verbose:
-            print(msg)
-        with open(os.path.join(out_path, "train.txt"), "a") as f: 
-            f.write(msg + "\n")
-            f.flush()
+        if not os.path.exists(logfile):
+            with open(logfile, "w") as f: 
+                msg = ','.join(['epoch']+[f"train_{k}" for k in sorted(train_metrics.keys())]+[f"valid_{k}" for k in sorted(val_metrics.keys())]) + "\n"
+                f.write(msg)
+                f.flush()
+                if verbose:
+                    print(msg)
+
+        with open(logfile, "a") as f: 
+            msg = ','.join([str(epoch)]+[f'{train_metrics[k]:.4f}' for k in sorted(train_metrics.keys())]+[f'{val_metrics[k]:.4f}' for k in sorted(val_metrics.keys())]) + "\n"
+            f.write(msg)
+            f.flush()    
+            if verbose:
+                print(msg)
             
     # remove temporal files           
     shutil.rmtree(config["cache_path"], ignore_errors=True)
@@ -166,14 +172,14 @@ def test(test_file, model_weights=None, output_file=None, config={}, nworkers=2,
     if verbose:
         print(f"Start test of {test_file}")        
     test_metrics = net.test(test_loader)
-    summary = " ".join([f"test_{k} {v:.3f}" for k, v in test_metrics.items()])
+    summary = ",".join([k for k in sorted(test_metrics.keys())]) + "\n" + ",".join([f"{test_metrics[k]:.3f}" for k in sorted(test_metrics.keys())])+ "\n" 
     if output_file is not None:
         with open(output_file, "w") as f:
-            f.write(summary+"\n")
+            f.write(summary)
     if verbose:
         print(summary)
 
-def pred(pred_input, sequence_id='pred_id', model_weights=None, out_path=None, config={}, nworkers=2, draw=False, draw_resolution=10, verbose=True):
+def pred(pred_input, sequence_id='pred_id', model_weights=None, out_path=None, logits=False, config={}, nworkers=2, draw=False, draw_resolution=10, verbose=True):
     
     if out_path is None:
         output_format = "text"
@@ -202,9 +208,9 @@ def pred(pred_input, sequence_id='pred_id', model_weights=None, out_path=None, c
                 f.write(f"{sequence_id},{pred_input}\n")
             
         else:
-            raise ValueError(f"Input have invalid inputs, nucleotides should be picked from: {nt_set}")
+            raise ValueError(f"Invalid input nt {set(pred_input)}, either the file is missing or the secuence have invalid nucleotides (should be any of {nt_set})")
     pred_loader = DataLoader(
-        SeqDataset(pred_file, max_len=config["max_len"] if "max_len" in config else 512, for_prediction=True, use_restrictions=config["use_restrictions"] if "use_restrictions" in config else False),
+        SeqDataset(pred_file, for_prediction=True, **config),
         batch_size=config["batch_size"] if "batch_size" in config else 4,
         shuffle=False,
         num_workers=nworkers,
@@ -219,7 +225,8 @@ def pred(pred_input, sequence_id='pred_id', model_weights=None, out_path=None, c
 
     if verbose:        
         print(f"Start prediction of {pred_file}")
-    predictions = net.pred(pred_loader)
+
+    predictions, logits_list = net.pred(pred_loader, logits=logits)
     if draw:
         for i in range(len(predictions)):
             item = predictions.iloc[i]
@@ -253,4 +260,11 @@ def pred(pred_input, sequence_id='pred_id', model_weights=None, out_path=None, c
         for i in range(len(predictions)):
             item = predictions.iloc[i]
             write_ct(os.path.join(out_path, item.id +".ct"), item.id, item.sequence, item.base_pairs)
-    
+    if logits:
+        base = os.path.split(out_path)[0] if not os.path.isdir(out_path) else out_path
+        if len(base) == 0:
+            base = "."
+        out_path_dir = base + "/logits/"
+        os.mkdir(out_path_dir)
+        for id, pred, pred_post in logits_list:
+            pickle.dump((pred, pred_post), open(os.path.join(out_path_dir, id + ".pk"), "wb"))

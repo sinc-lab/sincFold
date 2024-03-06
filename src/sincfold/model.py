@@ -32,15 +32,17 @@ def sincfold(pretrained=False, weights=None, **kwargs):
 class SincFold(nn.Module):
     def __init__(
         self,
+        train_len=0,
         embedding_dim=4,
         device="cpu",
         negative_weight=0.1,
-        lr=0.001,
+        lr=1e-4,
         loss_l1=0,
         loss_beta=0,
-        use_scheduler=False,
+        scheduler="none",
         verbose=True,
-        use_restrictions=False,
+        interaction_prior=False,
+        output_th=0.5,
         **kwargs
     ):
         """Base classifier model from embedding sequence-
@@ -53,21 +55,26 @@ class SincFold(nn.Module):
         self.loss_beta = loss_beta
         self.verbose = verbose
         self.config = kwargs
+        self.output_th = output_th
 
         mid_ch = 1
-        self.use_restrictions = use_restrictions
-        if use_restrictions:
+        self.interaction_prior = interaction_prior
+        if interaction_prior != "none":
             mid_ch = 2
 
         # Define architecture
-        self.build_graph(embedding_dim, mid_ch=mid_ch, **kwargs)
-
+        self.build_graph(embedding_dim, mid_ch=mid_ch, **kwargs) 
         self.optimizer = tr.optim.Adam(self.parameters(), lr=lr)
 
         # lr scheduler
-        if use_scheduler:
+        self.scheduler_name = scheduler
+        if scheduler == "plateau":
             self.scheduler = tr.optim.lr_scheduler.ReduceLROnPlateau(
                 self.optimizer, mode="max", patience=5, verbose=True
+            )
+        elif scheduler == "cycle":
+            self.scheduler = tr.optim.lr_scheduler.OneCycleLR(
+                self.optimizer, max_lr=lr, steps_per_epoch=train_len, epochs=self.config["max_epochs"]
             )
         else:
             self.scheduler = None
@@ -78,16 +85,16 @@ class SincFold(nn.Module):
         self,
         embedding_dim,
         kernel=3,
-        filters=16,
-        num_layers=1,
+        filters=32,
+        num_layers=2,
         dilation_resnet1d=3,
         resnet_bottleneck_factor=0.5,
         mid_ch=1,
         kernel_resnet2d=5,
-        bottleneck1_resnet2d=128,
-        bottleneck2_resnet2d=64,
-        filters_resnet2d=128,
-        rank=32,
+        bottleneck1_resnet2d=256,
+        bottleneck2_resnet2d=128,
+        filters_resnet2d=256,
+        rank=64,
         dilation_resnet2d=3,
         **kwargs
     ):
@@ -95,10 +102,10 @@ class SincFold(nn.Module):
 
         self.use_restrictions = mid_ch != 1
 
-        self.resnet = [nn.Conv1d(embedding_dim, filters, kernel, padding="same")]
+        self.resnet1d = [nn.Conv1d(embedding_dim, filters, kernel, padding="same")]
 
         for k in range(num_layers):
-            self.resnet.append(
+            self.resnet1d.append(
                 ResidualLayer1D(
                     dilation_resnet1d,
                     resnet_bottleneck_factor,
@@ -107,16 +114,16 @@ class SincFold(nn.Module):
                 )
             )
 
-        self.resnet = nn.Sequential(*self.resnet)
+        self.resnet1d = nn.Sequential(*self.resnet1d)
 
-        self.convsal1 = nn.Conv1d(
+        self.convrank1 = nn.Conv1d(
             in_channels=filters,
             out_channels=rank,
             kernel_size=kernel,
             padding=pad,
             stride=1,
         )
-        self.convsal2 = nn.Conv1d(
+        self.convrank2 = nn.Conv1d(
             in_channels=filters,
             out_channels=rank,
             kernel_size=kernel,
@@ -124,10 +131,10 @@ class SincFold(nn.Module):
             stride=1,
         )
 
-        self.conv2D1 = nn.Conv2d(
+        self.resnet2d = [nn.Conv2d(
             in_channels=mid_ch, out_channels=filters_resnet2d, kernel_size=7, padding="same"
-        )
-        self.resnet_block = [
+        )]
+        self.resnet2d += [
             ResidualBlock2D(
                 filters_resnet2d,
                 bottleneck1_resnet2d,
@@ -141,7 +148,7 @@ class SincFold(nn.Module):
             )
         ]
         
-        self.resnet_block = nn.Sequential(*self.resnet_block)
+        self.resnet2d = nn.Sequential(*self.resnet2d)
 
         self.conv2Dout = nn.Conv2d(
             in_channels=filters_resnet2d,
@@ -150,41 +157,36 @@ class SincFold(nn.Module):
             padding="same",
         )
 
-    def forward(self, x, *args):
-        """args includes additional variables from dataloader: L, mask, seqid, sequence, [prob_mask]"""
-        n = x.shape[2]
-        mask = args[1].to(self.device)
-        y = self.resnet(x)
-        ya = self.convsal1(y)
+    def forward(self, batch):
+        x = batch["embedding"].to(self.device)
+        batch_size = x.shape[0]
+        L = x.shape[2]
+        
+        y = self.resnet1d(x)
+        ya = self.convrank1(y)
         ya = tr.transpose(ya, -1, -2)
 
-        yb = self.convsal2(y)
+        yb = self.convrank2(y)
 
         y = ya @ yb
         yt = tr.transpose(y, -1, -2)
         y = (y + yt) / 2
 
-        y0 = y.view(-1, n, n).multiply(mask)  # add valid connection mask
+        y0 = y.view(-1, L, L) 
 
-        batch_size = x.shape[0]
-
-        if self.use_restrictions:
-            prob_mat = args[4].to(self.device)
-            x1 = tr.zeros([batch_size, 2, n, n]).to(self.device)
+        if self.interaction_prior != "none":
+            prob_mat = batch["interaction_prior"].to(self.device)
+            x1 = tr.zeros([batch_size, 2, L, L]).to(self.device)
             x1[:, 0, :, :] = y0
             x1[:, 1, :, :] = prob_mat
         else:
             x1 = y0.unsqueeze(1)
 
-        # Representation
-        y = self.conv2D1(x1)
-        # resnet block
-        y = self.resnet_block(y)
+        y = self.resnet2d(x1)
         # output
         y = self.conv2Dout(tr.relu(y)).squeeze(1)
-
-        y = y.multiply(mask)
-
+        if batch["canonical_mask"] is not None:
+            y = y.multiply(batch["canonical_mask"].to(self.device))
         yt = tr.transpose(y, -1, -2)
         y = (y + yt) / 2
 
@@ -205,11 +207,13 @@ class SincFold(nn.Module):
         yhat = yhat.unsqueeze(1)
         # yhat will have high positive values for base paired and high negative values for unpaired
         yhat = tr.cat((-yhat, yhat), dim=1)
-        error_loss = cross_entropy(yhat, y, ignore_index=-1, weight=self.class_weight)
-
+        
         y0 = y0.unsqueeze(1)
         y0 = tr.cat((-y0, y0), dim=1)
         error_loss1 = cross_entropy(y0, y, ignore_index=-1, weight=self.class_weight)
+        
+        error_loss = cross_entropy(yhat, y, ignore_index=-1, weight=self.class_weight)
+    
 
         loss = (
             error_loss
@@ -225,21 +229,23 @@ class SincFold(nn.Module):
         if self.verbose:
             loader = tqdm(loader)
 
-        for batch in loader:  # X, Y, L, mask, seqid, sequence, [prob_mask]
-            X = batch[0].to(self.device)
-            y = batch[1].to(self.device)
-
+        for batch in loader: 
+            
+            y = batch["contact"].to(self.device)
+            batch.pop("contact")
             self.optimizer.zero_grad()  # Cleaning cache optimizer
-            y_pred = self(X, *batch[2:])
-
-            loss = self.loss_func(y_pred, y)
-
+            y_pred = self(batch)
+            
+            if batch["family_weight"] is not None:
+                loss = self.loss_func(y_pred, y, family_weight=batch["family_weight"].to(self.device))
+            else:
+                loss = self.loss_func(y_pred, y)
             # y_pred is a composed tensor, we need to get the final pred
             if isinstance(y_pred, tuple):
                 y_pred = y_pred[0]
 
             f1 = contact_f1(
-                y.cpu(), y_pred.detach().cpu(), batch[2], method="triangular"
+                y.cpu(), y_pred.detach().cpu(), batch["length"], method="triangular"
             )
 
             metrics["loss"] += loss.item()
@@ -248,6 +254,9 @@ class SincFold(nn.Module):
             loss.backward()
             self.optimizer.step()
 
+            if self.scheduler_name == "cycle":
+                    self.scheduler.step()
+
         for k in metrics:
             metrics[k] /= len(loader)
 
@@ -255,75 +264,82 @@ class SincFold(nn.Module):
 
     def test(self, loader):
         self.eval()
-        metrics = {"loss": 0, "f1": 0}
+        metrics = {"loss": 0, "f1": 0, "f1_post": 0}
 
         if self.verbose:
             loader = tqdm(loader)
 
         with tr.no_grad():
             for batch in loader:  
-                X = batch[0].to(self.device)
-                y = batch[1].to(self.device)
-                lengths = batch[2]
-                mask = batch[3]
+                y = batch["contact"].to(self.device)
+                batch.pop("contact")
+                lengths = batch["length"]
+                
 
-                y_pred = self(X, *batch[2:])
+                y_pred = self(batch)
                 loss = self.loss_func(y_pred, y)
                 metrics["loss"] += loss.item()
 
                 if isinstance(y_pred, tuple):
                     y_pred = y_pred[0]
 
-                y_pred_post = postprocessing(y_pred.cpu(), mask)
+                y_pred_post = postprocessing(y_pred.cpu(), batch["canonical_mask"])
 
-                f1 = contact_f1(
-                    y.cpu(), y_pred_post.cpu(), lengths, reduce=True)
+                f1 = contact_f1(y.cpu(), y_pred.cpu(), lengths, th=self.output_th, reduce=True, method="triangular")
+                f1_post = contact_f1(
+                    y.cpu(), y_pred_post.cpu(), lengths, th=self.output_th, reduce=True, method="triangular")
 
                 metrics["f1"] += f1
+                metrics["f1_post"] += f1_post
 
         for k in metrics:
             metrics[k] /= len(loader)
 
-        if self.scheduler is not None:
-            self.scheduler.step(metrics["f1"])
+        if self.scheduler_name == "plateau":
+            self.scheduler.step(metrics["f1_post"])
 
         return metrics
 
-    def pred(self, loader):
+    def pred(self, loader, logits=False):
         self.eval()
 
         if self.verbose:
             loader = tqdm(loader)
 
-        predictions = []
+        predictions, logits_list = [], [] 
         with tr.no_grad():
-            for batch in loader: # X, Y, L, mask, seqid, sequence, [prob_mask]
-                X = batch[0].to(self.device)
-                lengths = batch[2]
-                mask = batch[3]
-                seqid = batch[4]
-                sequences = batch[5]
+            for batch in loader: 
+                
+                lengths = batch["length"]
+                seqid = batch["id"]
+                sequences = batch["sequence"]
 
-                y_pred = self(X, *batch[2:])
+
+                y_pred = self(batch)
                 
                 if isinstance(y_pred, tuple):
                     y_pred = y_pred[0]
 
-                y_pred_post = postprocessing(y_pred.cpu(), mask)
+                y_pred_post = postprocessing(y_pred.cpu(), batch["canonical_mask"])
 
                 for k in range(y_pred_post.shape[0]):
+                    if logits:
+                        logits_list.append(
+                            (seqid[k],
+                             y_pred[k, : lengths[k], : lengths[k]].squeeze().cpu(),
+                             y_pred_post[k, : lengths[k], : lengths[k]].squeeze()
+                            ))
                     predictions.append(
                         (seqid[k],
-                         sequences[k],
+                        sequences[k],
                             mat2bp(
                                 y_pred_post[k, : lengths[k], : lengths[k]].squeeze()
                             )                         
                         )
                     )
-               
         predictions = pd.DataFrame(predictions, columns=["id", "sequence", "base_pairs"])
 
-        return predictions
+        return predictions, logits_list
 
 class ResidualLayer1D(nn.Module):
     def __init__(

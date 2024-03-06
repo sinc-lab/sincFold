@@ -184,7 +184,17 @@ def read_ct(ctfile):
     seq, bp = [], []
     
     k = 1
-    for line in open(ctfile):
+    for p, line in enumerate(open(ctfile)):
+        if p == 0:
+            try:
+                seq_len = int(line.split()[0])
+            except ValueError:
+                # >seq length: N extra info
+                if line.split(":")[0] == ">seq length":
+                    seq_len = int(line.split(":")[1].split()[0])
+            
+            continue 
+
         if line[0] == "#" or len(line.strip()) == 0:
             # comment
             continue
@@ -201,6 +211,8 @@ def read_ct(ctfile):
         k = len(seq) + 1
         if n2 > 0 and (n1 < n2):
             bp.append([n1, n2])
+
+    assert len(seq) == seq_len, f"ct file format error\n{seq_len}\n{seq}\n{len(seq)}"
     return "".join(seq), bp
 
 
@@ -218,14 +230,20 @@ def write_ct(fname, seqid, seq, base_pairs):
 
 
 def split_fasta_rec(s, mfe=True):
+    """This assume the format of the fasta record is AACCGGUU((....))(-1.2), where the last 
+    parenthesis part is optional (mfe)"""
+    s = s.strip()
     mfe_start = s.rfind("(")
 
     if mfe:
         mfe = float(s[mfe_start + 1 : -1])
-        s = s[:mfe_start]
+    s = s[:mfe_start].strip()
 
     seq = s[: len(s) // 2]
     struct = s[len(s) // 2 :]
+    
+    assert len(seq) == len(struct), "Sequence and structure have different lengths"
+
     return seq, struct, mfe
 
 
@@ -254,11 +272,12 @@ def mat2bp(x):
 def postprocessing(preds, masks):
     """Postprocessing function using viable pairing mask.
     Inputs are batches of size [B, N, N]"""
-    y_pred_mask = preds.multiply(masks)
+    if masks is not None:
+        preds = preds.multiply(masks)
 
-    y_pred_mask_triu = tr.triu(y_pred_mask)
-    y_pred_mask_max = tr.zeros_like(y_pred_mask)
-    for k in range(y_pred_mask.shape[0]):
+    y_pred_mask_triu = tr.triu(preds)
+    y_pred_mask_max = tr.zeros_like(preds)
+    for k in range(preds.shape[0]):
         y_pred_mask_max_aux = tr.zeros_like(y_pred_mask_triu[k, :, :])
 
         val, ind = y_pred_mask_triu[k, :, :].max(dim=0)
@@ -313,36 +332,6 @@ def ct2dot(ct_file):
         print("Dotbracket conversion only available on linux")
     return dotbracket
 
-def bp2dot(L, base_pairs):
-    """Create an inversible dot-bracket notation from base pairs"""
-    dot = list("."*L)
-    for i,j in base_pairs:
-        dot[i-1] = "("
-        dot[j-1] = ")"
-    
-    lvl = 1
-    to_check = [base_pairs]
-    while to_check:
-        
-        base_pairs = to_check.pop()
-        
-        pseudoknots = find_pseudoknots(base_pairs)
-        if not pseudoknots:
-            continue
-        base_pairs = [bp for bp in base_pairs if bp not in pseudoknots]
-        
-        to_check += [base_pairs, pseudoknots]
-    
-        for i, j in pseudoknots:
-            dot[i-1] = MATCHING_BRACKETS[lvl][0]
-            dot[j-1] = MATCHING_BRACKETS[lvl][1]
-        
-        lvl += 1
-        if lvl >= len(MATCHING_BRACKETS):
-            break
-    
-    
-    return "".join(dot)
 
 def valid_sequence(seq):
     """Check if sequence is valid"""
