@@ -1,6 +1,6 @@
 # **sincFold**
 
-This is the repository for sincFold, a new RNA folding prediction tool based on deep learning.
+This is the repository for sincFold, a new RNA secondary folding prediction tool based on deep learning.
 
 
 <p align="center">
@@ -14,7 +14,7 @@ A summary of results can be seen in [this notebook](results/summary.ipynb).
 
 ## Folding RNA sequences
 
-We have a [web demo](https://sinc.unl.edu.ar/web-demo/sincfold/) ([mirror](https://huggingface.co/spaces/lbugnon/sincFold)) running with the latest version. This server admits one sequence at a time. We provide a model pre-trained with validated RNA datasets (ArchiveII, RNAstralign, URS-PDB). Please follow the next instructions if you want to run the model locally.
+We have a [web demo](https://sinc.unl.edu.ar/web-demo/sincfold/) ([mirror](https://huggingface.co/spaces/lbugnon/sincFold)) running with the latest version. This server admits one sequence at a time. We provide a model pre-trained with validated RNA datasets. Please follow the next instructions if you want to run the model locally.
 
 
 ## Install
@@ -108,7 +108,8 @@ Using a GPU for training is recommended (with the option '-d cuda'). The complet
   author={Leandro A. Bugnon and Leandro Di Persia and Matias Gerard and Jonathan Raad and 
   Santiago Prochetto and Emilio Fenoy and Uciel Chorostecki and Federico Ariel and 
   Georgina Stegmayer and Diego H. Milone},
-  journal={under review},
+  journal={under review, bioRxiv},
+  url={https://www.biorxiv.org/content/10.1101/2023.10.10.561771v1}
   year={2023}
 }
 ```
