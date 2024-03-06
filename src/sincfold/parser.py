@@ -63,7 +63,7 @@ def parser():
     )
     parser_test.add_argument(
         "-o",
-        type=str, dest="output_file", 
+        type=str, dest="out_path", 
         help="Output test metrics (default: only printed on the console)",
     )
 
@@ -82,9 +82,14 @@ def parser():
     )
     parser_pred.add_argument(
         "-o",
-        type=str, dest="output_file", 
-        help="Output path, it can be a .csv file or a directory to hold .ct files (default: pred.csv)",
+        type=str, dest="out_path", 
+        help="Output path, it can be a .csv file or a directory to hold CT files or interaction score files  (default: pred.csv)",
     )
+    
+    parser_pred.add_argument(
+        "--logits", action="store_true", help="Output scores instead of hard predictions (default: False)"
+    )
+
     parser_pred.add_argument(
         "-w", type=str, dest="model_weights", help="Trained model weights"
     )
