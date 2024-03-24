@@ -13,7 +13,7 @@ class SeqDataset(Dataset):
         interaction_prior="probmat", use_cannonical_mask=False, family_weighted_sample=False, training=False,
  **kargs):
         """
-        interaction_prior: none, prob_mat
+        interaction_prior: none, probmat
         """
         self.max_len = max_len
         self.verbose = verbose
