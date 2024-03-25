@@ -10,7 +10,7 @@ from sincfold.utils import valid_mask, prob_mat, bp2matrix, dot2bp
 class SeqDataset(Dataset):
     def __init__(
         self, dataset_path, min_len=0, max_len=512, verbose=False, cache_path=None, for_prediction=False, 
-        interaction_prior="probmat", use_cannonical_mask=False, family_weighted_sample=False, training=False,
+        interaction_prior="probmat", use_cannonical_mask=False, training=False,
  **kargs):
         """
         interaction_prior: none, probmat
