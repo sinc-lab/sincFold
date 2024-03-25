@@ -16,8 +16,6 @@ from sincfold.utils import write_ct, validate_file, ct2dot
 from sincfold.parser import parser
 from sincfold.utils import dot2png, ct2svg
 
-__version__ = "0.16"
-
 def main():
     
     args = parser()

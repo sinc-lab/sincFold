@@ -1,5 +1,5 @@
 import argparse
-
+from sincfold._version import __version__
 def parser():   
 
     parser = argparse.ArgumentParser(
@@ -14,10 +14,10 @@ def parser():
     parser.add_argument("-j", type=int, default=2, help="Number of parallel workers")
     parser.add_argument("--quiet", action="store_true", help="Quiet mode (default: False)") 
     parser.add_argument("--max-length", type=int, default=512, help="Maximum sequence length to process (default: 512") 
-    
+    parser.add_argument('--version', '-v', action='version', version='%(prog)s ' + __version__)
 
     subparsers = parser.add_subparsers(
-        title="Actions", dest="command", description="Running commands", required=True
+        title="Actions", dest="command", description="Running commands", required=False
     )
 
     parser_train = subparsers.add_parser("train", help="Train a new model")

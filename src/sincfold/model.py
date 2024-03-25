@@ -236,10 +236,7 @@ class SincFold(nn.Module):
             self.optimizer.zero_grad()  # Cleaning cache optimizer
             y_pred = self(batch)
             
-            if batch["family_weight"] is not None:
-                loss = self.loss_func(y_pred, y, family_weight=batch["family_weight"].to(self.device))
-            else:
-                loss = self.loss_func(y_pred, y)
+            loss = self.loss_func(y_pred, y)
             # y_pred is a composed tensor, we need to get the final pred
             if isinstance(y_pred, tuple):
                 y_pred = y_pred[0]

@@ -109,7 +109,7 @@ Using a GPU for training is recommended (with the option '-d cuda'). The complet
   Santiago Prochetto and Emilio Fenoy and Uciel Chorostecki and Federico Ariel and 
   Georgina Stegmayer and Diego H. Milone},
   journal={under review, bioRxiv},
-  url={https://www.biorxiv.org/content/10.1101/2023.10.10.561771v1}
+  url={https://www.biorxiv.org/content/10.1101/2023.10.10.561771v2}
   year={2023}
 }
 ```
