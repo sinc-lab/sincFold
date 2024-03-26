@@ -9,7 +9,7 @@ from sincfold.metrics import contact_f1
 from sincfold.utils import mat2bp, postprocessing
 from sincfold._version import __version__
 
-SINCFOLD_WEIGHTS = 'https://github.com/sinc-lab/sincFold/raw/main/weights/sincFold_weights_{__version__}.pmt'
+SINCFOLD_WEIGHTS = f'https://github.com/sinc-lab/sincFold/raw/main/weights/sincFold_weights_{__version__}.pmt'
 
 def sincfold(pretrained=False, weights=None, **kwargs):
     """ 
