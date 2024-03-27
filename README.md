@@ -32,7 +32,7 @@ and install with:
 
     pip install .
 
-on Windows, you will probably need to add the python scripts folder to the PATH. 
+on Windows, you will probably need to add the python scripts folder to the PATH. It should work with python 3.9-3.11.
 
 ## Predicting sequences
 
