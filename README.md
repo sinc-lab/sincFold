@@ -103,13 +103,19 @@ then call the training and testing functions
 Using a GPU for training is recommended (with the option '-d cuda'). The complete process may take several hours using a GPU.
 
 ```bibtex
-@article{sincFold2023,
-  title={sincFold: end-to-end learning of short- and long-range interactions for RNA folding},
-  author={Leandro A. Bugnon and Leandro Di Persia and Matias Gerard and Jonathan Raad and 
-  Santiago Prochetto and Emilio Fenoy and Uciel Chorostecki and Federico Ariel and 
-  Georgina Stegmayer and Diego H. Milone},
-  journal={under review, bioRxiv},
-  url={https://www.biorxiv.org/content/10.1101/2023.10.10.561771v2}
-  year={2023}
+@article{sincFold2024,
+  author       = {Bugnon, L. A. and Di Persia, L. and Gerard, M. and Raad, J. and 
+		          Prochetto, S. and Fenoy, E. and Chorostecki, U. and Ariel, F.
+                  and Stegmayer, G. and Milone, D. H.},
+  title        = {{sincFold}: end-to-end learning of short- and long-range interactions in {RNA} secondary structure},
+  journal      = {Briefings in Bioinformatics},
+  volume       = {25},
+  number       = {4},
+  pages        = {bbae271},
+  year         = {2024},
+  month        = {06},
+  issn         = {1477-4054},
+  doi          = {10.1093/bib/bbae271},
+  url          = {http://sinc.unl.edu.ar/sinc-publications/2024/BDGRPFCASM24}
 }
 ```
