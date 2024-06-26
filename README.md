@@ -105,8 +105,8 @@ Using a GPU for training is recommended (with the option '-d cuda'). The complet
 ```bibtex
 @article{sincFold2024,
   author       = {Bugnon, L. A. and Di Persia, L. and Gerard, M. and Raad, J. and 
-		          Prochetto, S. and Fenoy, E. and Chorostecki, U. and Ariel, F.
-                  and Stegmayer, G. and Milone, D. H.},
+		          Prochetto, S. and Fenoy, E. and Chorostecki, U. and Ariel, F. and
+                          Stegmayer, G. and Milone, D. H.},
   title        = {{sincFold}: end-to-end learning of short- and long-range interactions in {RNA} secondary structure},
   journal      = {Briefings in Bioinformatics},
   volume       = {25},
