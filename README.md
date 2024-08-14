@@ -1,7 +1,7 @@
 # **sincFold**
 
 This is the repository for sincFold, a new RNA secondary folding prediction tool based on deep learning.
-
+[Check out the paper!](https://academic.oup.com/bib/article/25/4/bbae271/7690295)
 
 <p align="center">
 <img src="abstract.png" alt="abstract">
