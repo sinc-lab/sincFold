@@ -257,7 +257,7 @@ def pred(pred_input, sequence_id='pred_id', model_weights=None, out_path=None, l
     else: # ct
         for i in range(len(predictions)):
             item = predictions.iloc[i]
-            write_ct(os.path.join(out_path, item.id +".ct"), item.id, item.sequence, item.base_pairs)
+            write_ct(os.path.join(out_path, str(item.id) +".ct"), item.id, item.sequence, item.base_pairs)
     if logits:
         base = os.path.split(out_path)[0] if not os.path.isdir(out_path) else out_path
         if len(base) == 0:
